@@ -102,19 +102,19 @@ export class Transform {
         let t = new Transform();
 
         // Position
-        t.position.x = Math.random() * rangePos;
-        t.position.y = Math.random() * rangePos;
-        t.position.z = Math.random() * rangePos;
+        t.position.x = (Math.random() * 2 - 1) * rangePos;
+        t.position.y = (Math.random() * 2 - 1) * rangePos;
+        t.position.z = (Math.random() * 2 - 1) * rangePos;
 
         // Orientation
-        t.rotation.pitch = Math.random() * rangeRot;
-        t.rotation.roll = Math.random() * rangeRot;
-        t.rotation.yaw = Math.random() * rangeRot;
-
+        t.rotation.pitch = (Math.random() * 2 - 1) * rangeRot;
+        t.rotation.roll  = (Math.random() * 2 - 1) * rangeRot;
+        t.rotation.yaw   = (Math.random() * 2 - 1) * rangeRot;
+        
         // Scale
-        t.scale.x = Math.random() * rangeScale;
-        t.scale.y = Math.random() * rangeScale;
-        t.scale.z = Math.random() * rangeScale;
+        t.scale.x = (Math.random() * 2 - 1) * rangeScale;
+        t.scale.y = (Math.random() * 2 - 1) * rangeScale;
+        t.scale.z = (Math.random() * 2 - 1) * rangeScale;
 
         return t;
     }

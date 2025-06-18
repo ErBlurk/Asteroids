@@ -6,7 +6,7 @@ import { Actor } from "../core/actor.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
 import { Rotator } from "../utils/Math/Rotator.js";
 
-const MAX_RENDER_DISTANCE = 100;
+const MAX_RENDER_DISTANCE = 1024;
 
 export class Renderer {
     constructor()
@@ -78,7 +78,7 @@ export class Renderer {
     // This is the main function that handled WebGL drawing
     GetModelViewProjection() 
     {
-        return Matrix4.GetModelViewProjection(this.perspectiveMatrix, this.position.x, this.position.y, this.position.z, this.rotation.roll, this.rotation.pitch);
+        return Matrix4.GetModelViewProjection(this.perspectiveMatrix, this.position.x, this.position.y, this.position.z, this.rotation.pitch, this.rotation.yaw);
     }
 }
 

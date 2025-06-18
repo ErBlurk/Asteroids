@@ -3,17 +3,21 @@ import { MeshComponent } from "../objects/components/mesh_component.js";
 import { GameObject } from "../objects/object.js";
 import { Transform } from "../utils/Math/Transform.js";
 import { BoxComponent } from "../objects/components/box_component.js";
+import { World } from "./world.js";
 
 export class Actor extends GameObject {
-    constructor(gl, transform) {
+    constructor(gl, world, transform) {
         super();
 
         this.gl;
+        this.world = world;
         this.transform = transform;
         if(this.transform == null)
         {
             this.transform = new Transform();
         }
+        this.bTickEnable = false;
+        this.bHidden = false;
 
         this.mesh = new MeshComponent(gl);
         this.box = new BoxComponent(gl);
@@ -21,6 +25,11 @@ export class Actor extends GameObject {
         this.components = [];
         this.components.push(this.mesh);
         this.components.push(this.box);
+    }
+
+    Tick(deltaTime)
+    {
+        // Leave blank
     }
 
     ShowTexture(param) {
