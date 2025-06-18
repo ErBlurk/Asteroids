@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>WebGL</title>
+
+    <script type="module" src="./src/main.js">    </script>
+
+    <style>
+        html {
+            color: white;
+            background-color: black;
+            font-family: Arial;
+            overflow: hidden;
+        }
+
+        body {
+            padding: 0;
+            margin: 0;
+            display: flex;
+            /* Use flexbox for centering content */
+            justify-content: center;
+            /* Center horizontally */
+            align-items: center;
+            /* Center vertically */
+            min-height: 100vh;
+            /* Ensure body takes full viewport height */
+            position: relative;
+            /* For absolute positioning of controls */
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            /* Canvas fills viewport width */
+            height: 100vh;
+            /* Canvas fills viewport height */
+            z-index: 0;
+            /* Ensure canvas is behind controls */
+        }
+
+        #canvas-div {
+            position: absolute;
+            /* Take full space for canvas */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            /* Make canvas-div a flex container */
+            justify-content: center;
+            /* Center canvas horizontally within itself */
+            align-items: center;
+            /* Center canvas vertically within itself */
+        }
+
+        #controls-div {
+            position: absolute;
+            /* Position relative to the body */
+            top: 10px;
+            /* 10px from the top */
+            left: 10px;
+            /* 10px from the left */
+            background-color: rgba(51, 51, 51, 0.7);
+            /* Semi-transparent background */
+            padding: 10px;
+            /* Smaller padding */
+            border-radius: 8px;
+            /* Slightly rounded corners */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            /* Subtle shadow */
+            z-index: 1;
+            /* Ensure controls are above the canvas */
+            max-width: 180px;
+            /* Limit the width of the control panel */
+            font-size: 0.9em;
+            /* Slightly smaller text */
+        }
+
+        #controls {
+            padding: 0;
+            /* No padding for inner controls div */
+        }
+
+        .control-group {
+            margin-bottom: 0;
+            /* No bottom margin for the only control group */
+        }
+
+        .control {
+            padding: 5px 0;
+            /* Smaller padding for individual controls */
+        }
+
+        /* Styling for the rotation labels */
+        .control p {
+            margin: 0;
+            /* Remove default paragraph margins */
+            line-height: 1.2;
+            /* Adjust line height for compactness */
+        }
+    </style>
+
+</head>
+
+<body onresize="WindowResize()">
+    <div id="canvas-div">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div id="controls-div">
+        <div id="controls">
+            <div class="control-group">
+                <div class="control">
+                    <p>Rotation X: <span id="rotX">0.00</span></p>
+                    <p>Rotation Y: <span id="rotY">0.00</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embedded cube OBJ -->
+    <script id="box.obj" type="text/obj">
+v  -1  1 -1
+v  -1 -1 -1
+v   1 -1 -1
+v   1  1 -1
+v   1 -1  1
+v  -1 -1  1
+v  -1  1  1
+v   1  1  1
+vn  0  0  1
+vn  0  0  1
+vn  0  0  1
+vn  0  0  1
+vn  0  0 -1
+vn  0  0 -1
+vn  0  0 -1
+vn  0  0 -1
+vn  0  1  0
+vn  0  1  0
+vn  0  1  0
+vn  0  1  0
+vn -1  0  0
+vn -1  0  0
+vn -1  0  0
+vn -1  0  0
+vn  0 -1  0
+vn  0 -1  0
+vn  0 -1  0
+vn  0 -1  0
+vn  1  0  0
+vn  1  0  0
+vn  1  0  0
+vn  1  0  0
+vt 0 0
+vt 0 1
+vt 1 1
+vt 1 0
+f 1/1/1  4/4/4  3/3/3  2/2/2  
+f 5/1/5  8/4/8  7/3/7  6/2/6  
+f 3/1/9  5/4/12 6/3/11 2/2/10 
+f 4/1/13 8/4/16 5/3/15 3/2/14 
+f 1/1/17 7/4/20 8/3/19 4/2/18 
+f 2/1/21 6/4/24 7/3/23 1/2/22 
+    </script>
+</body>
+
+</html>
