@@ -99,6 +99,11 @@
             line-height: 1.2;
             /* Adjust line height for compactness */
         }
+
+        /* Dotted border */
+        hr.dotted {
+        border-top: 3px dotted #bbb;
+        }
     </style>
 
 </head>
@@ -112,13 +117,21 @@
         <div id="controls">
             <div class="control-group">
                 <div class="control">
-                    <p>FPS: <span id="fps">0.00</span></p>
-                    <p>Rotation X: <span id="rotX">0.00</span></p>
-                    <p>Rotation Y: <span id="rotY">0.00</span></p>
-                    <p>Rotation Z: <span id="rotZ">0.00</span></p>
-                    <p>Position X: <span id="posX">0.00</span></p>
-                    <p>Position Y: <span id="posY">0.00</span></p>
-                    <p>Position Z: <span id="posZ">0.00</span></p>
+                    <div class="control">
+                        <p>FPS: <span id="fps">0.00</span></p>
+                    </div>
+                    <hr class="dotted">
+                    <div class="control">
+                        <p>Rotation X: <span id="rotX">0.00</span></p>
+                        <p>Rotation Y: <span id="rotY">0.00</span></p>
+                        <p>Rotation Z: <span id="rotZ">0.00</span></p>
+                    </div>
+                    <hr class="dotted">
+                    <div class="control">
+                        <p>Position X: <span id="posX">0.00</span></p>
+                        <p>Position Y: <span id="posY">0.00</span></p>
+                        <p>Position Z: <span id="posZ">0.00</span></p>
+                    </div>
                 </div>
             </div>
         </div>

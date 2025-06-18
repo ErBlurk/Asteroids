@@ -79,7 +79,6 @@ export class MeshComponent extends Component
 
 		this.boundingBox.min = tMin;
 		this.boundingBox.max = tMax;
-		console.log(this.boundingBox);
 	}
 	
 	computeBoundaries(vertPos)
@@ -162,7 +161,8 @@ export class MeshComponent extends Component
 		const gl = this.gl;
 
 		gl.useProgram(this.prog);
-		gl.uniformMatrix4fv(this.mvpLoc, false, trans);											// Apply transform
+		gl.uniformMatrix4fv(this.modelMatrixLoc, false, this.modelMatrix.elements);
+		gl.uniformMatrix4fv(this.mvpLoc, false, trans);
 	
 		// Vertex positions
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertBuffer);
@@ -235,6 +235,12 @@ uniform mat4 uModelMatrix;
 uniform bool uSwapYZ;
 
 varying vec2 vTexCoord;
+varying float vGray;
+
+float rand(vec3 co) {
+    // Pseudo-random hash function from 3D position
+    return fract(sin(dot(co, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
+}
 
 void main() {
     vec3 pos = aPosition;
@@ -246,8 +252,12 @@ void main() {
 
     gl_Position = uModelViewProjection * uModelMatrix * vec4(pos, 1.0);
     vTexCoord = aTexCoord;
+
+    // Calculate a pseudo-random gray value for this vertex
+    vGray = clamp(rand(pos), 0.3, 0.5);
 }
 `;
+
 
 // Fragment Shader
 const meshFS = `
@@ -257,12 +267,14 @@ uniform bool uUseTexture;
 uniform sampler2D uTexture;
 
 varying vec2 vTexCoord;
+varying float vGray;
 
 void main() {
     if (uUseTexture) {
         gl_FragColor = texture2D(uTexture, vTexCoord);
     } else {
-        gl_FragColor = vec4(1,gl_FragCoord.z*gl_FragCoord.z,0,1);
+        // Smoothly interpolated grayscale color
+        gl_FragColor = vec4(vec3(vGray), 1.0);
     }
 }
 `;

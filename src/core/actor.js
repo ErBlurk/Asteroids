@@ -17,7 +17,7 @@ export class Actor extends GameObject {
         {
             this.transform = new Transform();
         }
-        this.bTickEnable = false;
+        this.bTickEnable = true;
         this.bHidden = false;
         this.bDirty = false;
 
@@ -32,6 +32,9 @@ export class Actor extends GameObject {
     Tick(deltaTime)
     {
         // Leave blank
+
+        // this.transform.position.addInPlace(new Vector3(0.01, 0, 0));
+        this.transform.rotation.add(0.01, 0, 0);
     }
 
     ShowTexture(param) {
@@ -124,9 +127,11 @@ export class Actor extends GameObject {
     DrawComponents(mvp)
     {
         for (let component of this.components) {
-            if (this.bDirty && component instanceof MeshComponent)  { //  || component instanceof BoxComponent) {
-                component.setPosition(this.transform.position);
-                component.setRotation(this.transform.rotation);
+            if (component instanceof MeshComponent)  { //  || component instanceof BoxComponent) {
+                //component.setPosition(this.transform.position);
+                //component.setRotation(this.transform.rotation);
+                component.setTransform(this.transform);
+                // component.draw( mvp );
             }
             component.draw( mvp );
         }

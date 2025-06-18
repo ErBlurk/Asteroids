@@ -18,9 +18,9 @@ export class World {
         this.tickingActors = [];
         this.visibleActors = [];
 
-        for(let i = 0; i < 10; i++)
+        for(let i = 0; i < 128; i++)
         {
-            let actor = new Actor(this.gl, this, Transform.random(10, 1, 1));
+            let actor = new Actor(this.gl, this, Transform.random(100, 1, 10));
             actor.LoadObj("../assets/objects/teapot-low.obj");
             this.SpawnActor(actor);
         }

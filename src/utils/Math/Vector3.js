@@ -119,4 +119,8 @@ export class Vector3 {
     static unitary() {
         return new Vector3(1, 1, 1);
     }
+
+    static random() {
+        return new Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+    }
 }

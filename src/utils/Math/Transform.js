@@ -66,10 +66,6 @@ export class Transform {
 
     // Computes (or returns cached) local‐to‐world matrix: T * R * S
     getMatrix() {
-        if (!this._dirty) {
-            return this.matrix;
-        }
-
         // 1) Build translation matrix
         const T = Matrix4.translation(
             this.position.x,
