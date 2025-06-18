@@ -328,4 +328,111 @@ export class Matrix4 {
         var mvp = this.MatrixMult(projectionMatrix, model); // MVP = Projection * Model
         return mvp;
     }
+
+    static GetViewMatrix(translationX, translationY, translationZ, rotationX, rotationY) {
+        // Rotation around X axis
+         var rotX = [
+            1, 0, 							0, 						0,
+            0, Math.cos(rotationX), 		Math.sin(rotationX),	0,
+            0, Math.sin(rotationX) * -1, 	Math.cos(rotationX), 	0,
+            0, 0, 							0, 						1
+        ];
+
+        // Rotation around Y axis
+        var rotY = [
+            Math.cos(rotationY), 	0, Math.sin(rotationY) * -1, 	0,
+            0, 						1, 0, 							0,
+            Math.sin(rotationY), 	0, Math.cos(rotationY), 		0,
+            0, 						0, 0, 							1
+        ];
+
+        // Total rotation
+        var rotXY = this.MatrixMult(rotX, rotY);
+
+        // Transform position matrix
+        var trans = [
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            translationX, translationY, translationZ, 1
+        ];
+
+        // Calculate the resultin projected transform matrix, don't invert order
+        var model = this.MatrixMult(rotXY, trans); // Model = Rotation * Translation
+        return new Matrix4(model);
+    }
+    
+    static GetPerspective(fovY_radians, aspect, near, far) {
+        const s = 1 / Math.tan(fovY_radians / 2);
+    
+        // build the 4×4 array in column‑major order:
+        // [  s/aspect,    0,         0,  0,
+        //      0,         s,         0,  0,
+        //      0,         0,   (n+f)/(f-n), 1,
+        //      0,         0,  -2*n*f/(f-n), 0 ]
+        const e = new Float32Array(16);
+    
+        // col 0
+        e[0] = s / aspect; e[1] = 0; e[2] = 0; e[3] = 0;
+        // col 1
+        e[4] = 0; e[5] = s; e[6] = 0; e[7] = 0;
+        // col 2
+        e[8]  = 0;
+        e[9]  = 0;
+        e[10] = (near + far) / (far - near);
+        e[11] = 1;
+        // col 3
+        e[12] = 0;
+        e[13] = 0;
+        e[14] = -2 * near * far / (far - near);
+        e[15] = 0;
+    
+        return new Matrix4(e);
+    }
+    
+
+    // Creates a look-at view matrix.
+    // eye: [x, y, z] position of the camera
+    // center: [x, y, z] point the camera is looking at
+    // up: [x, y, z] up direction of the camera
+    static lookAt(eye, center, up) {
+        const x0 = eye[0], x1 = eye[1], x2 = eye[2];
+        const y0 = center[0], y1 = center[1], y2 = center[2];
+        const z0 = up[0], z1 = up[1], z2 = up[2];
+
+        let fx = y0 - x0;
+        let fy = y1 - x1;
+        let fz = y2 - x2;
+
+        let rlf = 1 / Math.sqrt(fx * fx + fy * fy + fz * fz);
+        fx *= rlf;
+        fy *= rlf;
+        fz *= rlf;
+
+        let sx = fy * z2 - fz * z1;
+        let sy = fz * z0 - fx * z2;
+        let sz = fx * z1 - fy * z0;
+
+        let rls = 1 / Math.sqrt(sx * sx + sy * sy + sz * sz);
+        sx *= rls;
+        sy *= rls;
+        sz *= rls;
+
+        let ux = sy * fz - sz * fy;
+        let uy = sz * fx - sx * fz;
+        let uz = sx * fy - sy * fx;
+
+        const e = new Float32Array(16);
+        e[0] = sx; e[4] = ux; e[8] = fx; e[12] = 0;
+        e[1] = sy; e[5] = uy; e[9] = fy; e[13] = 0;
+        e[2] = sz; e[6] = uz; e[10] = fz; e[14] = 0;
+        e[3] = 0; e[7] = 0; e[11] = 0; e[15] = 1;
+
+        const viewMatrix = new Matrix4(e);
+        viewMatrix.elements[12] = -(sx * x0 + sy * x1 + sz * x2);
+        viewMatrix.elements[13] = -(ux * x0 + uy * x1 + uz * x2);
+        viewMatrix.elements[14] = -(fx * x0 + fy * x1 + fz * x2);
+
+        return viewMatrix;
+    }
 }

@@ -4,12 +4,13 @@ import { GameObject } from "../objects/object.js";
 import { Transform } from "../utils/Math/Transform.js";
 import { BoxComponent } from "../objects/components/box_component.js";
 import { World } from "./world.js";
+import { Vector3 } from "../utils/Math/Vector3.js";
 
 export class Actor extends GameObject {
     constructor(gl, world, transform) {
         super();
 
-        this.gl;
+        this.gl = gl;
         this.world = world;
         this.transform = transform;
         if(this.transform == null)
@@ -18,6 +19,7 @@ export class Actor extends GameObject {
         }
         this.bTickEnable = false;
         this.bHidden = false;
+        this.bDirty = false;
 
         this.mesh = new MeshComponent(gl);
         this.box = new BoxComponent(gl);
@@ -122,6 +124,10 @@ export class Actor extends GameObject {
     DrawComponents(mvp)
     {
         for (let component of this.components) {
+            if (this.bDirty && component instanceof MeshComponent)  { //  || component instanceof BoxComponent) {
+                component.setPosition(this.transform.position);
+                component.setRotation(this.transform.rotation);
+            }
             component.draw( mvp );
         }
     }

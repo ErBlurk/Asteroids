@@ -18,9 +18,9 @@ export class World {
         this.tickingActors = [];
         this.visibleActors = [];
 
-        for(let i = 0; i < 100; i++)
+        for(let i = 0; i < 10; i++)
         {
-            let actor = new Actor(this.gl, this, Transform.random(100, 1, 1));
+            let actor = new Actor(this.gl, this, Transform.random(10, 1, 1));
             actor.LoadObj("../assets/objects/teapot-low.obj");
             this.SpawnActor(actor);
         }
@@ -49,7 +49,7 @@ export class World {
         const gameLoop = (currentTime) => {
             const deltaTime = (currentTime - this.lastFrameTime) / 1000.0; // Convert ms to seconds
             this.lastFrameTime = currentTime;
-            
+
             // 1. Tick (Update) all actors
             for (let actor of this.tickingActors) 
             {
@@ -148,7 +148,10 @@ export class World {
     // Call this once per frame to render everything
     DrawScene() 
     {
-        let mvp = this.renderer.GetModelViewProjection();
+        // this.renderer.UpdateProjectionMatrix();
+
+        //let mvp = this.renderer.GetModelViewProjection();
+        let mvp = this.renderer.GetViewProjectionMatrix();
 
         // Clear the screen and the depth buffer.
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);

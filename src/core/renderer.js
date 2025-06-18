@@ -65,20 +65,32 @@ export class Renderer {
         const min_n = 0.001;
         if (n < min_n) n = min_n;
         var f = (this.position.z + MAX_RENDER_DISTANCE);;
-        var fov = 3.145 * 60 / 180;
-        var s = 1 / Math.tan(fov / 2);
-        this.perspectiveMatrix = [
-            s / r, 0, 0, 0,
-            0, s, 0, 0,
-            0, 0, (n + f) / (f - n), 1,
-            0, 0, -2 * n * f / (f - n), 0
-        ];
+        var fov = Math.PI * 60 / 180;
+        this.perspectiveMatrix = Matrix4.GetPerspective(fov, r, n, f).elements;
+        
+        // var s = 1 / Math.tan(fov / 2);
+        // this.perspectiveMatrix = [
+        //     s / r, 0, 0, 0,
+        //     0, s, 0, 0,
+        //     0, 0, (n + f) / (f - n), 1,
+        //     0, 0, -2 * n * f / (f - n), 0
+        // ];
     }
 
-    // This is the main function that handled WebGL drawing
+    // DEPRECATED - This is the main function that handled WebGL drawing
     GetModelViewProjection() 
     {
         return Matrix4.GetModelViewProjection(this.perspectiveMatrix, this.position.x, this.position.y, this.position.z, this.rotation.pitch, this.rotation.yaw);
+    }
+
+    // This is the correct method to get the camera's combined View-Projection matrix
+    GetViewProjectionMatrix() {
+        const viewMatrix = Matrix4.GetViewMatrix(this.position.x, this.position.y, this.position.z, this.rotation.pitch, this.rotation.yaw);
+        
+        const projection = new Matrix4(this.perspectiveMatrix);
+        const viewProjectionResult = projection.multiply(viewMatrix);
+
+        return viewProjectionResult.elements; // Return the underlying Float32Array for gl.uniformMatrix4fv
     }
 }
 
