@@ -12,7 +12,10 @@ export class MeshComponent extends Component
 		this.transform = new Transform();
 		this.modelMatrix = new Matrix4();
 
-		this.prog = this.InitShaderProgram(meshVS, meshFS);
+		this.meshFS = meshFS;
+		this.meshVS = meshVS;
+
+		this.prog = this.InitShaderProgram(this.meshVS, this.meshFS);
 	
 		// Get attribute/uniform locations
 		this.vertPosLoc 		= gl.getAttribLocation(this.prog, "aPosition");
@@ -124,6 +127,9 @@ export class MeshComponent extends Component
 	{
 		const gl = this.gl;
 
+		this._lastVertPos    = vertPos;
+  		this._lastTexCoords  = texCoords;
+
 		this.numTriangles = vertPos.length / 3;
 	
 		// Bounding box computation
@@ -142,6 +148,30 @@ export class MeshComponent extends Component
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
 	}
 	
+	setProgram(vsSource, fsSource) 
+	{
+		const gl = this.gl;
+		const prog = this.InitShaderProgram(vsSource, fsSource);  // compile & link
+		if (!prog) throw new Error("Failed to compile shaders");
+		this.prog = prog;                                        // install
+
+		// re-fetch all your attrib/uniform locations:
+		this.vertPosLoc = gl.getAttribLocation(prog, "aPosition");
+		this.texCoordLoc = gl.getAttribLocation(prog, "aTexCoord");
+		this.mvpLoc = gl.getUniformLocation(prog, "uModelViewProjection");
+		this.modelMatrixLoc = gl.getUniformLocation(prog, "uModelMatrix");
+		this.swapYZLoc = gl.getUniformLocation(prog, "uSwapYZ");
+		this.useTextureLoc = gl.getUniformLocation(prog, "uUseTexture");
+		// etc...
+
+		// then re-bind your existing vertex data:
+		if (this._lastVertPos && this._lastTexCoords) {
+			this.setMesh(this._lastVertPos, this._lastTexCoords);
+		}
+	}
+
+
+  
 	// This method is called when the user changes the state of the
 	// "Swap Y-Z Axes" checkbox. 
 	// The argument is a boolean that indicates if the checkbox is checked.
@@ -223,58 +253,26 @@ export class MeshComponent extends Component
 	}
 }
 
-// Vertex Shader
+// Vertex Shader (unchanged)
 const meshVS = `
 precision mediump float;
-
 attribute vec3 aPosition;
-attribute vec2 aTexCoord;
-
 uniform mat4 uModelViewProjection;
 uniform mat4 uModelMatrix;
 uniform bool uSwapYZ;
-
-varying vec2 vTexCoord;
-varying float vGray;
-
-float rand(vec3 co) {
-    // Pseudo-random hash function from 3D position
-    return fract(sin(dot(co, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
-}
-
 void main() {
-    vec3 pos = aPosition;
-    
-    // If swapYZ is true, swap Y and Z components
-    if (uSwapYZ) {
-        pos = vec3(pos.x, pos.z, pos.y);
-    }
-
-    gl_Position = uModelViewProjection * uModelMatrix * vec4(pos, 1.0);
-    vTexCoord = aTexCoord;
-
-    // Calculate a pseudo-random gray value for this vertex
-    vGray = clamp(rand(pos), 0.3, 0.5);
+	vec3 pos = aPosition;
+	if (uSwapYZ) pos = vec3(pos.x, pos.z, pos.y);
+	gl_Position = uModelViewProjection * uModelMatrix * vec4(pos, 1.0);
 }
 `;
 
-
-// Fragment Shader
+// Fragment Shader (with added ambient term)
 const meshFS = `
 precision mediump float;
-
 uniform bool uUseTexture;
 uniform sampler2D uTexture;
-
-varying vec2 vTexCoord;
-varying float vGray;
-
 void main() {
-    if (uUseTexture) {
-        gl_FragColor = texture2D(uTexture, vTexCoord);
-    } else {
-        // Smoothly interpolated grayscale color
-        gl_FragColor = vec4(vec3(vGray), 1.0);
-    }
+	gl_FragColor = vec4(1.0); // white
 }
 `;

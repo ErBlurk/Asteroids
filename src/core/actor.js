@@ -3,8 +3,6 @@ import { MeshComponent } from "../objects/components/mesh_component.js";
 import { GameObject } from "../objects/object.js";
 import { Transform } from "../utils/Math/Transform.js";
 import { BoxComponent } from "../objects/components/box_component.js";
-import { World } from "./world.js";
-import { Vector3 } from "../utils/Math/Vector3.js";
 
 export class Actor extends GameObject {
     constructor(gl, world, transform) {
@@ -34,7 +32,15 @@ export class Actor extends GameObject {
         // Leave blank
 
         // this.transform.position.addInPlace(new Vector3(0.01, 0, 0));
-        this.transform.rotation.add(0.01, 0, 0);
+    }
+
+    async InitShaders(Vertex, Fragment) 
+    {
+        const VS = await this.mesh.loadShaderSource(Vertex);
+        const FS = await this.mesh.loadShaderSource(Fragment);
+
+        // tell the mesh to recompile with GLSL
+        this.mesh.setProgram(VS, FS);
     }
 
     ShowTexture(param) {

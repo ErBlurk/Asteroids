@@ -16,8 +16,8 @@ export class Pawn extends Actor
 
         // Input handling
         this.keysPressed = {}; // Object to store pressed key states
-        this.movementSpeed = 2; // Adjust as needed
-        this.verticalSpeed = 2; // Adjust for Q E movement
+        this.movementSpeed = 3; // Adjust as needed
+        this.verticalSpeed = 5; // Adjust for Q E movement
         
         this.InitController();
     }

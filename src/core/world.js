@@ -6,7 +6,11 @@
 
 import { Transform } from "../utils/Math/Transform.js";
 import { Actor } from "./actor.js"
+import { Asteroid } from "../game/asteroid.js";
 import { Renderer } from "./renderer.js";
+import { Vector3 } from "../utils/Math/Vector3.js";
+import { Matrix4 } from "../utils/Math/Matrix4.js";
+import { DirectionalLight } from "./directional_light.js";
 
 export class World {
     constructor() 
@@ -18,10 +22,14 @@ export class World {
         this.tickingActors = [];
         this.visibleActors = [];
 
+        this.dirLight = new DirectionalLight(new Vector3(1, 1, 0.5));
+
         for(let i = 0; i < 128; i++)
         {
-            let actor = new Actor(this.gl, this, Transform.random(100, 1, 10));
-            actor.LoadObj("../assets/objects/teapot-low.obj");
+            let t = Transform.random(128, 1, 1);
+            t.scale.set((1 + Math.random()) / 2.0, (1 + Math.random()) / 2.0, (1 + Math.random()) / 2.0).multiplyScalarInPlace(Math.random() * 5.0);
+            let actor = new Asteroid(this.gl, this, t, 3, true);
+            // actor.LoadObj("../assets/objects/teapot-low.obj");
             this.SpawnActor(actor);
         }
     }
@@ -46,6 +54,8 @@ export class World {
     // Main game loop
     StartGameLoop() 
     {
+        this.lastFrameTime = performance.now();
+
         const gameLoop = (currentTime) => {
             const deltaTime = (currentTime - this.lastFrameTime) / 1000.0; // Convert ms to seconds
             this.lastFrameTime = currentTime;
@@ -146,7 +156,7 @@ export class World {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Call this once per frame to render everything
-    DrawScene() 
+    /*DrawScene() 
     {
         // this.renderer.UpdateProjectionMatrix();
 
@@ -163,5 +173,26 @@ export class World {
                 actor.DrawComponents(mvp);
             }
         }
-    }
+    }*/
+
+        DrawScene() {
+            const gl       = this.gl;
+            const vpMatrix = this.renderer.GetViewProjectionMatrix();
+            const lightDir = this.dirLight.direction;  // a Vector3
+          
+            for (let actor of this.visibleActors) {
+              if (actor.bHidden) continue;
+          
+              const mesh = actor.mesh;
+              gl.useProgram(mesh.prog);
+          
+              // set the light uniform
+              const loc = gl.getUniformLocation(mesh.prog, "uLightDirection");
+              gl.uniform3f(loc, lightDir.x, lightDir.y, lightDir.z);
+          
+              // now draw as you did before
+              actor.DrawComponents(vpMatrix);
+            }
+          }
+          
 }
