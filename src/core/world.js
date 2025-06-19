@@ -198,37 +198,30 @@ export class World {
         const hud = this.renderer.hudCanvas;
         const ctx = this.renderer.hudCtx;
 
-        // 1) Clear full-res
         ctx.clearRect(0, 0, hud.width, hud.height);
-
-        // 2) Move the “origin” by half a pixel for crisp 1px strokes
         ctx.save();
         ctx.translate(0.5, 0.5);
 
-        // 3) Compute center in device-pixels
         const cx = hud.width / 2;
         const cy = hud.height / 2;
 
-        // 4) Triangle vertices (equilateral)
         const r = Math.min(hud.width, hud.height) * 0.05;
         const sin60 = Math.sqrt(3) / 2;
         const pts = [
-            { x: cx, y: cy - r }, // top
-            { x: cx - r * sin60, y: cy + r / 2 }, // bottom-left
-            { x: cx + r * sin60, y: cy + r / 2 }  // bottom-right
+            { x: cx, y: cy - r },
+            { x: cx - r * sin60, y: cy + r / 2 },
+            { x: cx + r * sin60, y: cy + r / 2 }
         ];
 
-        const gap = 8;     // <-- how big the empty hole is, in pixels
+        const gap = 8;
         ctx.strokeStyle = "#FFF";
         ctx.lineWidth = 1;
 
         ctx.beginPath();
         for (let p of pts) {
-            // direction from vertex → center
             const dx = cx - p.x;
             const dy = cy - p.y;
             const len = Math.hypot(dx, dy);
-            // compute the “stop” point gap pixels away from center
             const stopX = cx - (dx / len) * gap;
             const stopY = cy - (dy / len) * gap;
 
@@ -237,7 +230,6 @@ export class World {
         }
         ctx.stroke();
 
-        // 6) Optionally, draw small endpoint dots
         ctx.fillStyle = "#FFF";
         for (let p of pts) {
             ctx.beginPath();
@@ -245,9 +237,20 @@ export class World {
             ctx.fill();
         }
 
+        // quarter circles (centered around crosshair)
+        const qcRadius = Math.min(hud.width, hud.height) * 0.4;
+
+        ctx.beginPath();
+        // left quarter: from 135° to 225°
+        ctx.arc(cx, cy, qcRadius, 3 * Math.PI / 4, 5 * Math.PI / 4);
+        ctx.stroke();
+
+        ctx.beginPath();
+        // right quarter: from -45° to 45°
+        ctx.arc(cx, cy, qcRadius, -Math.PI / 4, Math.PI / 4);
+        ctx.stroke();
+
         ctx.restore();
     }
-
-
-
+    
 }
