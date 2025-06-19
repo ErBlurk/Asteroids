@@ -134,9 +134,9 @@ export class Actor extends GameObject {
     {
         for (let component of this.components) {
             if (component instanceof MeshComponent)  { //  || component instanceof BoxComponent) {
-                //component.setPosition(this.transform.position);
-                //component.setRotation(this.transform.rotation);
-                component.setTransform(this.transform);
+                component.setPosition(this.transform.position);
+                component.setRotation(this.transform.rotation);
+                //component.setTransform(this.transform);
                 // component.draw( mvp );
             }
             component.draw( mvp );

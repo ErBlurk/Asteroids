@@ -33,6 +33,30 @@ export class MeshComponent extends Component
 		this.texture 			= gl.createTexture();
 	}
 
+	setPosition(position)
+	{
+		const gl = this.gl;
+
+		// Set model matrix
+		this.transform.position = position;
+		this.modelMatrix = this.transform.getMatrix();
+
+		gl.useProgram(this.prog);
+		gl.uniformMatrix4fv(this.modelMatrixLoc, false, this.modelMatrix.elements);
+	}
+
+	setRotation(rotation)
+	{
+		const gl = this.gl;
+
+		// Set model matrix
+		this.transform.rotation = rotation;
+		this.modelMatrix = this.transform.getMatrix();
+
+		gl.useProgram(this.prog);
+		gl.uniformMatrix4fv(this.modelMatrixLoc, false, this.modelMatrix.elements);
+	}
+
 	setTransform(transform) 
 	{
 		const gl = this.gl;

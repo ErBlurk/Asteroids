@@ -24,6 +24,8 @@ export class Renderer {
     InitWebGL() {
         // Initialize the WebGL canvas
         this.canvas = document.getElementById("canvas");
+        this.hudCanvas = document.getElementById("hud");
+        this.hudCtx    = this.hudCanvas.getContext("2d");
         this.canvas.oncontextmenu = function () { return false; };
         this.gl = this.canvas.getContext("webgl", { antialias: false, depth: true });	// Initialize the GL context
         if (!this.gl) {
@@ -44,7 +46,7 @@ export class Renderer {
     }
 
     // Called every time the window size is changed.
-    UpdateCanvasSize() {
+    /*UpdateCanvasSize() {
         this.canvas.style.width = "100%";
         this.canvas.style.height = "100%";
         const pixelRatio = window.devicePixelRatio || 1;
@@ -57,7 +59,34 @@ export class Renderer {
         this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 
         this.UpdateProjectionMatrix();
+    }*/
+
+
+    UpdateCanvasSize() {
+        const pixelRatio = window.devicePixelRatio || 1;
+    
+        // 1) Measure CSS size of GL canvas
+        const cssWidth  = this.canvas.clientWidth;
+        const cssHeight = this.canvas.clientHeight;
+    
+        // 2) Resize GL drawing buffer
+        this.canvas.width  = Math.floor(cssWidth  * pixelRatio);
+        this.canvas.height = Math.floor(cssHeight * pixelRatio);
+        // Make sure CSS stays 100%×100%
+        this.canvas.style.width  = cssWidth  + "px";
+        this.canvas.style.height = cssHeight + "px";
+    
+        // 3) Mirror for HUD canvas
+        this.hudCanvas.width  = this.canvas.width;
+        this.hudCanvas.height = this.canvas.height;
+        this.hudCanvas.style.width  = cssWidth  + "px";
+        this.hudCanvas.style.height = cssHeight + "px";
+    
+        // 4) Update WebGL viewport & projection
+        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        this.UpdateProjectionMatrix();
     }
+        
 
     UpdateProjectionMatrix() {        
         var r = this.canvas.width / this.canvas.height;

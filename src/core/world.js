@@ -13,8 +13,7 @@ import { Matrix4 } from "../utils/Math/Matrix4.js";
 import { DirectionalLight } from "./directional_light.js";
 
 export class World {
-    constructor() 
-    {
+    constructor() {
         this.renderer = new Renderer();
         this.gl = this.renderer.gl;
 
@@ -22,10 +21,9 @@ export class World {
         this.tickingActors = [];
         this.visibleActors = [];
 
-        this.dirLight = new DirectionalLight(new Vector3(1, 1, 0.5));
+        this.dirLight = new DirectionalLight(new Vector3(0.5, 1, -1));
 
-        for(let i = 0; i < 128; i++)
-        {
+        for (let i = 0; i < 128; i++) {
             let t = Transform.random(128, 1, 1);
             t.scale.set((1 + Math.random()) / 2.0, (1 + Math.random()) / 2.0, (1 + Math.random()) / 2.0).multiplyScalarInPlace(Math.random() * 5.0);
             let actor = new Asteroid(this.gl, this, t, 3, true);
@@ -52,8 +50,7 @@ export class World {
     }
 
     // Main game loop
-    StartGameLoop() 
-    {
+    StartGameLoop() {
         this.lastFrameTime = performance.now();
 
         const gameLoop = (currentTime) => {
@@ -61,10 +58,8 @@ export class World {
             this.lastFrameTime = currentTime;
 
             // 1. Tick (Update) all actors
-            for (let actor of this.tickingActors) 
-            {
-                if (actor.bTickEnable) 
-                {
+            for (let actor of this.tickingActors) {
+                if (actor.bTickEnable) {
                     actor.Tick(deltaTime);
                 }
             }
@@ -73,10 +68,11 @@ export class World {
             this.DrawScene();
 
             // 3. Update Frames Per Second Counter
-            if (document.getElementById("fps")) 
-            {
+            if (document.getElementById("fps")) {
                 document.getElementById("fps").innerHTML = (1 / deltaTime).toFixed(2);
             }
+
+            this.drawHUD();
 
             // Request the next frame
             requestAnimationFrame(gameLoop);
@@ -86,8 +82,7 @@ export class World {
         requestAnimationFrame(gameLoop);
     }
 
-    SpawnActor(actor)
-    {
+    SpawnActor(actor) {
         this.actors.push(actor);
 
         if (actor.bTickEnable === undefined) actor.bTickEnable = false; // Default
@@ -175,24 +170,84 @@ export class World {
         }
     }*/
 
-        DrawScene() {
-            const gl       = this.gl;
-            const vpMatrix = this.renderer.GetViewProjectionMatrix();
-            const lightDir = this.dirLight.direction;  // a Vector3
-          
-            for (let actor of this.visibleActors) {
-              if (actor.bHidden) continue;
-          
-              const mesh = actor.mesh;
-              gl.useProgram(mesh.prog);
-          
-              // set the light uniform
-              const loc = gl.getUniformLocation(mesh.prog, "uLightDirection");
-              gl.uniform3f(loc, lightDir.x, lightDir.y, lightDir.z);
-          
-              // now draw as you did before
-              actor.DrawComponents(vpMatrix);
-            }
-          }
-          
+    DrawScene() {
+        const gl = this.gl;
+        const vpMatrix = this.renderer.GetViewProjectionMatrix();
+        const lightDir = this.dirLight.direction;  // a Vector3
+
+        for (let actor of this.visibleActors) {
+            if (actor.bHidden) continue;
+
+            const mesh = actor.mesh;
+            gl.useProgram(mesh.prog);
+
+            // set the light uniform
+            const loc = gl.getUniformLocation(mesh.prog, "uLightDirection");
+            gl.uniform3f(loc, lightDir.x, lightDir.y, lightDir.z);
+
+            // now draw as you did before
+            actor.DrawComponents(vpMatrix);
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // HUD handling
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    drawHUD() {
+        const hud = this.renderer.hudCanvas;
+        const ctx = this.renderer.hudCtx;
+
+        // 1) Clear full-res
+        ctx.clearRect(0, 0, hud.width, hud.height);
+
+        // 2) Move the “origin” by half a pixel for crisp 1px strokes
+        ctx.save();
+        ctx.translate(0.5, 0.5);
+
+        // 3) Compute center in device-pixels
+        const cx = hud.width / 2;
+        const cy = hud.height / 2;
+
+        // 4) Triangle vertices (equilateral)
+        const r = Math.min(hud.width, hud.height) * 0.05;
+        const sin60 = Math.sqrt(3) / 2;
+        const pts = [
+            { x: cx, y: cy - r }, // top
+            { x: cx - r * sin60, y: cy + r / 2 }, // bottom-left
+            { x: cx + r * sin60, y: cy + r / 2 }  // bottom-right
+        ];
+
+        const gap = 8;     // <-- how big the empty hole is, in pixels
+        ctx.strokeStyle = "#FFF";
+        ctx.lineWidth = 1;
+
+        ctx.beginPath();
+        for (let p of pts) {
+            // direction from vertex → center
+            const dx = cx - p.x;
+            const dy = cy - p.y;
+            const len = Math.hypot(dx, dy);
+            // compute the “stop” point gap pixels away from center
+            const stopX = cx - (dx / len) * gap;
+            const stopY = cy - (dy / len) * gap;
+
+            ctx.moveTo(Math.round(p.x), Math.round(p.y));
+            ctx.lineTo(Math.round(stopX), Math.round(stopY));
+        }
+        ctx.stroke();
+
+        // 6) Optionally, draw small endpoint dots
+        ctx.fillStyle = "#FFF";
+        for (let p of pts) {
+            ctx.beginPath();
+            ctx.arc(Math.round(p.x), Math.round(p.y), 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+
+
 }

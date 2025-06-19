@@ -102,8 +102,14 @@
 
         /* Dotted border */
         hr.dotted {
-        border-top: 3px dotted #bbb;
+            border-top: 3px dotted #bbb;
         }
+
+        #hud {
+            width: 100vw;
+            height: 100vh;
+        }
+
     </style>
 
 </head>
@@ -111,6 +117,7 @@
 <body onresize="WindowResize()">
     <div id="canvas-div">
         <canvas id="canvas"></canvas>
+        <canvas id="hud" style="position:absolute; top:0; left:0; z-index:2; pointer-events:none;"></canvas>
     </div>
 
     <div id="controls-div">

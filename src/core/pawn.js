@@ -18,8 +18,13 @@ export class Pawn extends Actor
         this.keysPressed = {}; // Object to store pressed key states
         this.movementSpeed = 3; // Adjust as needed
         this.verticalSpeed = 5; // Adjust for Q E movement
+
+        // Third-person offset in pawn-local space:
+        this.cameraOffset = new Vector3(0, 2, -5);
         
         this.InitController();
+
+        this.LoadObj("../assets/objects/teapot-low.obj");
     }
 
     Tick(deltaTime) 
@@ -66,45 +71,37 @@ export class Pawn extends Actor
         rightVector.multiplyScalarInPlace(movementAmount);
         upVector.multiplyScalarInPlace(verticalAmount);
 
-        // W: Move forward
         if (this.keysPressed['w']) {
-            cameraPosition.x += forwardVector.x;
-            cameraPosition.y += forwardVector.y;
-            cameraPosition.z += forwardVector.z;
+            this.transform.position.addInPlace(forwardVector);
             moved = true;
         }
-        // S: Move backward
         if (this.keysPressed['s']) {
-            cameraPosition.x -= forwardVector.x;
-            cameraPosition.y -= forwardVector.y;
-            cameraPosition.z -= forwardVector.z;
+            this.transform.position.subtractInPlace(forwardVector);
             moved = true;
         }
-        // A: Move left (strafe left)
         if (this.keysPressed['a']) {
-            cameraPosition.x -= rightVector.x;
-            cameraPosition.z -= rightVector.z; // Strafe left on the horizontal plane
+            this.transform.position.subtractInPlace(rightVector);
             moved = true;
         }
-        // D: Move right (strafe right)
         if (this.keysPressed['d']) {
-            cameraPosition.x += rightVector.x;
-            cameraPosition.z += rightVector.z; // Strafe right on the horizontal plane
+            this.transform.position.addInPlace(rightVector);
             moved = true;
         }
-        // Q: Move up
         if (this.keysPressed['q']) {
-            cameraPosition.y += upVector.y;
+            this.transform.position.addInPlace(upVector);
             moved = true;
         }
-        // E: Move down
         if (this.keysPressed['e']) {
-            cameraPosition.y -= upVector.y;
+            this.transform.position.subtractInPlace(upVector);
             moved = true;
         }
 
         if (moved) 
         {
+            cameraPosition.x = this.transform.position.x;
+            cameraPosition.y = this.transform.position.y;
+            cameraPosition.z = this.transform.position.z;
+
             // Update UI elements if they show position
             if (document.getElementById("posX")) 
             {
