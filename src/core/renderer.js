@@ -2,9 +2,9 @@
 // Below is the core WebGL initialization code.
 ///////////////////////////////////////////////////////////////////////////////////
 import { Matrix4 } from "../utils/Math/Matrix4.js";
-import { Actor } from "../core/actor.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
 import { Rotator } from "../utils/Math/Rotator.js";
+import { SkyBox } from "./skybox.js";
 
 const MAX_RENDER_DISTANCE = 1024;
 
@@ -16,7 +16,11 @@ export class Renderer {
 
         this.gl = null;
         this.canvas = null;
+
         this.perspectiveMatrix = null;
+
+        this.skybox = null;
+
         this.InitWebGL();
     }
 
@@ -37,9 +41,8 @@ export class Renderer {
         this.gl.clearColor(0, 0, 0, 0);
         this.gl.enable(this.gl.DEPTH_TEST);
 
-        // Initialize the programs and buffers for drawing
-        // actor = new Actor(gl);
-        // actor.LoadObj("../assets/objects/teapot-low.obj");
+        // Init a skybox
+        this.skybox = new SkyBox(this.gl, this);
 
         // Set the viewport size
         this.UpdateCanvasSize();

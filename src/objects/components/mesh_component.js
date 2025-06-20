@@ -147,30 +147,34 @@ export class MeshComponent extends Component
 	// Similarly, every two consecutive elements in the texCoords array
 	// form the texture coordinate of a vertex.
 	// Note that this method can be called multiple times.
-	setMesh(vertPos, texCoords) 
-	{
+	setMesh(vertPos, texCoords, normals) {
 		const gl = this.gl;
-
-		this._lastVertPos    = vertPos;
-  		this._lastTexCoords  = texCoords;
-
+	
+		this._lastVertPos = vertPos;
+		this._lastTexCoords = texCoords;
+		this._lastNormals = normals;
+	
 		this.numTriangles = vertPos.length / 3;
 	
-		// Bounding box computation
 		this.computeBoundaries(vertPos);
-
-		// Model matrix
+	
 		gl.useProgram(this.prog);
 		gl.uniformMatrix4fv(this.modelMatrixLoc, false, this.modelMatrix.elements);
-
-		// Vertex positions
+	
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertPos), gl.STATIC_DRAW);
 	
-		// Texture coordinates
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
+	
+		if (!this.normalBuffer) {
+			this.normalBuffer = gl.createBuffer();
+			this.normalLoc = gl.getAttribLocation(this.prog, "aNormal");
+		}
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
 	}
+	
 	
 	setProgram(vsSource, fsSource) 
 	{

@@ -32,7 +32,7 @@ export class Pawn extends Actor {
 
         this.InitController();
 
-        this.LoadObj("../assets/objects/teapot-low.obj");
+        this.LoadObj("../assets/objects/voyager_1.obj");
     }
 
     Tick(deltaTime) {

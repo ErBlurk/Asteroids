@@ -155,7 +155,14 @@ export class World {
         const vpMatrix = this.renderer.GetViewProjectionMatrix();
         const lightDir = this.dirLight.direction;  // a Vector3
 
-        // this.renderer.DrawSkyBox();
+        this.gl.clearColor(0.0, 0.0, 0.0, 1.0); // optional, but safe to reset
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+
+        // Skybox first
+        if (this.renderer.skybox) {
+            const vp = this.renderer.GetViewProjectionMatrix();
+            this.renderer.skybox.draw();          
+        }
 
         for (let actor of this.visibleActors) {
             if (actor.bHidden) continue;
