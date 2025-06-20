@@ -4,10 +4,8 @@ import { Vector3 } from "../utils/Math/Vector3.js";
 var MIN_Y_ROT = -80.0;
 var MAX_Y_ROT = 80.0;
 
-export class Pawn extends Actor
-{
-    constructor(gl, world, transform)
-    {
+export class Pawn extends Actor {
+    constructor(gl, world, transform) {
         super(gl, world, transform);
 
         // Convert degrees to radians
@@ -23,52 +21,51 @@ export class Pawn extends Actor
         this.cameraOffset = new Vector3(0, 2, -5);
 
         this.acceleration = 10;          // units/sec²
-        this.maxSpeed     = 10;          // units/sec
-        this.friction     = 0.5;         // higher = quicker stop
+        this.maxSpeed = 10;          // units/sec
+        this.friction = 0.5;         // higher = quicker stop
 
         // Velocity vector:
-        this.velocity = new Vector3(0,0,0);
+        this.velocity = new Vector3(0, 0, 0);
 
         // Camera smoothing factor (0–1):
         this.cameraLerp = 0.15;
-        
+
         this.InitController();
 
         this.LoadObj("../assets/objects/teapot-low.obj");
     }
 
-    Tick(deltaTime) 
-    {
+    Tick(deltaTime) {
         this.HandleInput(deltaTime);
     }
 
     AddMovementInput(dir, dt) {
         // Desired accel vector
         const accel = dir.clone().multiplyScalar(this.acceleration);
-    
+
         // Integrate velocity
         this.velocity.addInPlace(accel.multiplyScalar(dt));
-    
+
         // Apply friction when no input
         if (dir.lengthSq() === 0) {
             const drag = Math.exp(-this.friction * dt);
             this.velocity.multiplyScalarInPlace(drag);
         }
-    
+
         // Clamp to max speed
         if (this.velocity.length() > this.maxSpeed) {
             this.velocity.normalize().multiplyScalarInPlace(this.maxSpeed);
         }
-    
+
         // Move pawn
         this.transform.position.addInPlace(this.velocity.clone().multiplyScalar(dt));
     }
 
     HandleInput(dt) {
         const world = this.world;
-        const yaw   = world.renderer.rotation.yaw;
+        const yaw = world.renderer.rotation.yaw;
         const pitch = -world.renderer.rotation.pitch;
-    
+
         // Build a unit “input direction” from WASD/QE:
         let input = new Vector3(0, 0, 0);
         if (this.keysPressed['w']) input.z +=  1;
@@ -78,7 +75,7 @@ export class Pawn extends Actor
         if (this.keysPressed['q']) input.y +=  1;
         if (this.keysPressed['e']) input.y += -1;
         if (input.lengthSq() > 0) input.normalize();
-    
+
         // Transform input from camera-local into world-space
         const forward = new Vector3(
             Math.sin(yaw) * Math.cos(pitch),
@@ -91,32 +88,32 @@ export class Pawn extends Actor
             -Math.cos(yaw - Math.PI / 2)
         ).normalize();
         const up = new Vector3(0, 1, 0);
-    
+
         // Combine into movement direction
         const dir = new Vector3(0, 0, 0);
         dir.addInPlace(forward.clone().multiplyScalar(input.z));
         dir.addInPlace(right.clone().multiplyScalar(input.x));
         dir.addInPlace(up.clone().multiplyScalar(input.y));
         if (dir.lengthSq() > 0) dir.normalize();
-    
+
         // Apply acceleration, friction, clamp & move pawn
         this.AddMovementInput(dir, dt);
-    
+
         // Smooth camera follow
         const camPos = world.renderer.position;
         camPos.x += (this.transform.position.x - camPos.x) * this.cameraLerp;
         camPos.y += (this.transform.position.y - camPos.y) * this.cameraLerp;
         camPos.z += (this.transform.position.z - camPos.z) * this.cameraLerp;
-    
+
         // Update on-screen position info
         if (document.getElementById("posX")) document.getElementById("posX").innerHTML = camPos.x.toFixed(2);
         if (document.getElementById("posY")) document.getElementById("posY").innerHTML = camPos.y.toFixed(2);
         if (document.getElementById("posZ")) document.getElementById("posZ").innerHTML = camPos.z.toFixed(2);
-    
+
         world.DrawScene();
     }
-    
-    
+
+
     _onMouseMove = (event) => {
         const canvas = this.world.renderer.canvas;
         const clamp = (v, min, max) => v < min ? min : v > max ? max : v;
@@ -132,13 +129,12 @@ export class Pawn extends Actor
         this.world.DrawScene();
 
         // update UI if present…
-        if (el = document.getElementById("rotX")) el.innerHTML = (this.world.renderer.rotation.yaw * 180 / Math.PI).toFixed(2);
-        if (el = document.getElementById("rotY")) el.innerHTML = (this.world.renderer.rotation.pitch * 180 / Math.PI).toFixed(2);
+        if (document.getElementById("rotX")) document.getElementById("rotX").innerHTML = (this.world.renderer.rotation.yaw * 180 / Math.PI).toFixed(2);
+        if (document.getElementById("rotY")) document.getElementById("rotY").innerHTML = (this.world.renderer.rotation.pitch * 180 / Math.PI).toFixed(2);
     }
 
 
-    InitController()
-    {
+    InitController() {
         const world = this.world;
         const canvas = this.world.renderer.canvas;
 
@@ -165,44 +161,14 @@ export class Pawn extends Actor
         canvas.addEventListener('click', () => {
             canvas.requestPointerLock();
         });
-        
+
         // When lock state changes, bind or unbind our pan handler
         document.addEventListener('pointerlockchange', () => {
             if (document.pointerLockElement === canvas) {
-            document.addEventListener('mousemove', this._onMouseMove, false);
+                document.addEventListener('mousemove', this._onMouseMove, false);
             } else {
-            document.removeEventListener('mousemove', this._onMouseMove, false);
+                document.removeEventListener('mousemove', this._onMouseMove, false);
             }
         });
-
-        /***
-        canvas.onmousedown = function(event) { // Correctly handled here
-            var cx = event.clientX;
-            var cy = event.clientY;
-
-            // Look at handling
-            canvas.onmousemove = function(event) { // <-- And pass 'event' here
-                world.renderer.rotation.yaw += (cx - event.clientX) / canvas.width * 5; // Look left and right
-                world.renderer.rotation.pitch += (cy - event.clientY) / canvas.height * 5; // Look up and down
-                world.renderer.rotation.pitch = clamp(world.renderer.rotation.pitch, MIN_Y_ROT, MAX_Y_ROT);
-
-                cx = event.clientX;
-                cy = event.clientY;
-
-                world.renderer.UpdateProjectionMatrix(); // Only necessary if projection matrix depends on rotation, which it doesn't here.
-                world.DrawScene();
-
-                if (document.getElementById("rotX")) {
-                    document.getElementById("rotX").innerHTML = (world.renderer.rotation.yaw * 180 / Math.PI).toFixed(2);
-                }
-                if (document.getElementById("rotY")) {
-                    document.getElementById("rotY").innerHTML = (world.renderer.rotation.pitch * 180 / Math.PI).toFixed(2);
-                }
-            }
-        }
-        canvas.onmouseup = canvas.onmouseleave = function() {
-            canvas.onmousemove = null;
-        }
-        ***/
     }
 }

@@ -72,7 +72,7 @@ export class World {
                 document.getElementById("fps").innerHTML = (1 / deltaTime).toFixed(2);
             }
 
-            this.drawHUD();
+            this.renderer.drawHUD();
 
             // Request the next frame
             requestAnimationFrame(gameLoop);
@@ -149,31 +149,13 @@ export class World {
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // Scene handling
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // Call this once per frame to render everything
-    /*DrawScene() 
-    {
-        // this.renderer.UpdateProjectionMatrix();
-
-        //let mvp = this.renderer.GetModelViewProjection();
-        let mvp = this.renderer.GetViewProjectionMatrix();
-
-        // Clear the screen and the depth buffer.
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-
-        for (let actor of this.visibleActors) {
-            // Draw the actors
-            if(!actor.bHidden)
-            {
-                actor.DrawComponents(mvp);
-            }
-        }
-    }*/
-
+    
     DrawScene() {
         const gl = this.gl;
         const vpMatrix = this.renderer.GetViewProjectionMatrix();
         const lightDir = this.dirLight.direction;  // a Vector3
+
+        // this.renderer.DrawSkyBox();
 
         for (let actor of this.visibleActors) {
             if (actor.bHidden) continue;
@@ -188,69 +170,6 @@ export class World {
             // now draw as you did before
             actor.DrawComponents(vpMatrix);
         }
-    }
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // HUD handling
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    drawHUD() {
-        const hud = this.renderer.hudCanvas;
-        const ctx = this.renderer.hudCtx;
-
-        ctx.clearRect(0, 0, hud.width, hud.height);
-        ctx.save();
-        ctx.translate(0.5, 0.5);
-
-        const cx = hud.width / 2;
-        const cy = hud.height / 2;
-
-        const r = Math.min(hud.width, hud.height) * 0.05;
-        const sin60 = Math.sqrt(3) / 2;
-        const pts = [
-            { x: cx, y: cy - r },
-            { x: cx - r * sin60, y: cy + r / 2 },
-            { x: cx + r * sin60, y: cy + r / 2 }
-        ];
-
-        const gap = 8;
-        ctx.strokeStyle = "#FFF";
-        ctx.lineWidth = 1;
-
-        ctx.beginPath();
-        for (let p of pts) {
-            const dx = cx - p.x;
-            const dy = cy - p.y;
-            const len = Math.hypot(dx, dy);
-            const stopX = cx - (dx / len) * gap;
-            const stopY = cy - (dy / len) * gap;
-
-            ctx.moveTo(Math.round(p.x), Math.round(p.y));
-            ctx.lineTo(Math.round(stopX), Math.round(stopY));
-        }
-        ctx.stroke();
-
-        ctx.fillStyle = "#FFF";
-        for (let p of pts) {
-            ctx.beginPath();
-            ctx.arc(Math.round(p.x), Math.round(p.y), 2, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // quarter circles (centered around crosshair)
-        const qcRadius = Math.min(hud.width, hud.height) * 0.4;
-
-        ctx.beginPath();
-        // left quarter: from 135° to 225°
-        ctx.arc(cx, cy, qcRadius, 3 * Math.PI / 4, 5 * Math.PI / 4);
-        ctx.stroke();
-
-        ctx.beginPath();
-        // right quarter: from -45° to 45°
-        ctx.arc(cx, cy, qcRadius, -Math.PI / 4, Math.PI / 4);
-        ctx.stroke();
-
-        ctx.restore();
     }
     
 }

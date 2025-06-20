@@ -121,6 +121,93 @@ export class Renderer {
 
         return viewProjectionResult.elements; // Return the underlying Float32Array for gl.uniformMatrix4fv
     }
+
+    DrawSkybox() {
+        const gl = this.gl;
+        const prog = this.skyboxProgram;
+        gl.useProgram(prog);
+    
+        // Disable depth writes but keep testing
+        gl.depthMask(false);
+    
+        // Compute inverse of viewProjection
+        const invVP = Matrix4
+            .Inverse(new Matrix4(this.GetViewProjectionMatrix()))
+            .elements;
+        gl.uniformMatrix4fv(this.skyboxMatrixLoc, false, invVP);
+    
+        // Render cube
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.skyboxBuffer);
+        gl.enableVertexAttribArray(this.skyboxAttribLoc);
+        gl.vertexAttribPointer(this.skyboxAttribLoc, 3, gl.FLOAT, false, 0, 0);
+    
+        gl.drawArrays(gl.TRIANGLES, 0, 36); // assuming 12 triangles
+    
+        gl.depthMask(true);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // HUD handling
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    drawHUD() {
+        const hud = this.hudCanvas;
+        const ctx = this.hudCtx;
+
+        ctx.clearRect(0, 0, hud.width, hud.height);
+        ctx.save();
+        ctx.translate(0.5, 0.5);
+
+        const cx = hud.width / 2;
+        const cy = hud.height / 2;
+
+        const r = Math.min(hud.width, hud.height) * 0.05;
+        const sin60 = Math.sqrt(3) / 2;
+        const pts = [
+            { x: cx, y: cy - r },
+            { x: cx - r * sin60, y: cy + r / 2 },
+            { x: cx + r * sin60, y: cy + r / 2 }
+        ];
+
+        const gap = 12;
+        ctx.strokeStyle = "#FFF";
+        ctx.lineWidth = 1;
+
+        ctx.beginPath();
+        for (let p of pts) {
+            const dx = cx - p.x;
+            const dy = cy - p.y;
+            const len = Math.hypot(dx, dy);
+            const stopX = cx - (dx / len) * gap;
+            const stopY = cy - (dy / len) * gap;
+
+            ctx.moveTo(Math.round(p.x), Math.round(p.y));
+            ctx.lineTo(Math.round(stopX), Math.round(stopY));
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = "#FFF";
+        for (let p of pts) {
+            ctx.beginPath();
+            ctx.arc(Math.round(p.x), Math.round(p.y), 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // quarter circles (centered around crosshair)
+        const qcRadius = Math.min(hud.width, hud.height) * 0.4;
+
+        ctx.beginPath();
+        // left quarter: from 135° to 225°
+        ctx.arc(cx, cy, qcRadius, 3 * Math.PI / 4, 5 * Math.PI / 4);
+        ctx.stroke();
+
+        ctx.beginPath();
+        // right quarter: from -45° to 45°
+        ctx.arc(cx, cy, qcRadius, -Math.PI / 4, Math.PI / 4);
+        ctx.stroke();
+
+        ctx.restore();
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
