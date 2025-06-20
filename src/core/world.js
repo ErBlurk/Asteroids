@@ -23,13 +23,54 @@ export class World {
 
         this.dirLight = new DirectionalLight(new Vector3(0.5, 1, -1));
 
+        this.SpawnAsteroids();
+    }
+
+    SpawnAsteroids()
+    {
         for (let i = 0; i < 128; i++) {
-            let t = Transform.random(128, 1, 1);
-            t.scale.set((1 + Math.random()) / 2.0, (1 + Math.random()) / 2.0, (1 + Math.random()) / 2.0).multiplyScalarInPlace(Math.random() * 5.0);
-            let actor = new Asteroid(this.gl, this, t, 3, true);
-            // actor.LoadObj("../assets/objects/teapot-low.obj");
+            const t = Transform.random(128, 1, 1);
+        
+            // Shape category
+            const type = Math.random();
+        
+            // Random scaling — avoid uniformity
+            let sx = 1, sy = 1, sz = 1;
+            if (type < 0.25) {
+                // Fat potato
+                sx = 1.2 + Math.random() * 3;
+                sy = 1.2 + Math.random() * 3;
+                sz = 1.2 + Math.random() * 3;
+            } else if (type < 0.5) {
+                // Long noodle
+                sx = 0.3 + Math.random() * 0.5;
+                sy = 1.5 + Math.random();
+                sz = 0.3 + Math.random() * 0.5;
+            } else if (type < 0.75) {
+                // Disk
+                sx = 1.0 + Math.random();
+                sy = 0.3 + Math.random() * 0.3;
+                sz = 1.0 + Math.random();
+            } else {
+                // Lumpy rock
+                sx = 0.8 + Math.random() * 1.2;
+                sy = 0.8 + Math.random() * 1.2;
+                sz = 0.8 + Math.random() * 1.2;
+            }
+        
+            // Apply scaling
+            t.scale.set(sx, sy, sz).multiplyScalarInPlace(1.0 + Math.random() * 5.0);
+        
+            // Shape noise settings
+            const subdivisions = 3; // + Math.floor(Math.random() * 2); // 2 or 3
+            const macroScale = 0.1 + Math.random() * 0.4;
+            const macroAmp = 0.6 + Math.random() * 1.2;
+            const microScale = 5.0 + Math.random() * 10.0;
+            const microAmp = 0.05 + Math.random() * 0.15;
+        
+            const actor = new Asteroid(this.gl, this, t, subdivisions, true, macroScale, macroAmp, microScale, microAmp);
             this.SpawnActor(actor);
-        }
+        }        
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////

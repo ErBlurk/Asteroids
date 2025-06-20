@@ -1,11 +1,12 @@
-import  { Renderer } from "./core/renderer.js"
 import { World } from "./core/world.js";
 import { Pawn } from "./core/pawn.js"
 import { Transform } from "./utils/Math/Transform.js";
 
+var world = null;
+
 window.onload = function() {
 
-	var world = new World();
+	world = new World();
     world.StartGameLoop();
 
     // Main player with controller
@@ -16,7 +17,8 @@ window.onload = function() {
     world.DrawScene(); // Initial draw
 };
 
-function WindowResize() {
-    UpdateCanvasSize();
-    DrawScene();
+export function WindowResize() {
+    world.renderer.UpdateCanvasSize();
 }
+
+window.WindowResize = WindowResize;

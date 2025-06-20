@@ -109,6 +109,7 @@ export class Asteroid extends Actor {
                 const a = getMidpoint(i0, i1);
                 const b = getMidpoint(i1, i2);
                 const c = getMidpoint(i2, i0);
+
                 newFaces.push([i0, c, a], [i1, a, b], [i2, b, c], [a, c, b]);
             }
             faces = newFaces;
@@ -139,6 +140,11 @@ export class Asteroid extends Actor {
                 }
 
                 triVerts[i] = v;
+            }
+
+            if (iterations % 2 === 1) {
+                // Flip face winding if subdivision count is odd
+                faces = faces.map(([i0, i1, i2]) => [i0, i2, i1]);
             }
 
             const edge1 = triVerts[1].clone().subtract(triVerts[0]);

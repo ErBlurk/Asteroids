@@ -48,47 +48,38 @@ export class Renderer {
         this.UpdateCanvasSize();
     }
 
-    // Called every time the window size is changed.
-    /*UpdateCanvasSize() {
-        this.canvas.style.width = "100%";
-        this.canvas.style.height = "100%";
-        const pixelRatio = window.devicePixelRatio || 1;
-        this.canvas.width = pixelRatio * this.canvas.clientWidth;
-        this.canvas.height = pixelRatio * this.canvas.clientHeight;
-        const width = (canvas.width / pixelRatio);
-        const height = (canvas.height / pixelRatio);
-        this.canvas.style.width = width + 'px';
-        this.canvas.style.height = height + 'px';
-        this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-
-        this.UpdateProjectionMatrix();
-    }*/
-
-
+    // In renderer.js
     UpdateCanvasSize() {
-        const pixelRatio = window.devicePixelRatio || 1;
-    
-        // 1) Measure CSS size of GL canvas
-        const cssWidth  = this.canvas.clientWidth;
-        const cssHeight = this.canvas.clientHeight;
-    
-        // 2) Resize GL drawing buffer
-        this.canvas.width  = Math.floor(cssWidth  * pixelRatio);
-        this.canvas.height = Math.floor(cssHeight * pixelRatio);
-        // Make sure CSS stays 100%×100%
-        this.canvas.style.width  = cssWidth  + "px";
-        this.canvas.style.height = cssHeight + "px";
-    
-        // 3) Mirror for HUD canvas
-        this.hudCanvas.width  = this.canvas.width;
+        const dpr = window.devicePixelRatio || 1;
+
+        // Get the actual viewport size
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // Resize the GL canvas drawing buffer
+        this.canvas.width = Math.floor(vw * dpr);
+        this.canvas.height = Math.floor(vh * dpr);
+
+        // Make sure its CSS size stays full‐screen
+        this.canvas.style.width = vw + "px";
+        this.canvas.style.height = vh + "px";
+
+        // Mirror for the HUD canvas (2D overlay)
+        this.hudCanvas.width = this.canvas.width;
         this.hudCanvas.height = this.canvas.height;
-        this.hudCanvas.style.width  = cssWidth  + "px";
-        this.hudCanvas.style.height = cssHeight + "px";
-    
-        // 4) Update WebGL viewport & projection
+        this.hudCanvas.style.width = vw + "px";
+        this.hudCanvas.style.height = vh + "px";
+
+        // If you want crisp 2D drawing at DPR, reset the transform:
+        this.hudCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        // Tell WebGL the new viewport size
         this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+
+        // Update your projection matrix so 3D stays correct
         this.UpdateProjectionMatrix();
     }
+
         
 
     UpdateProjectionMatrix() {        
