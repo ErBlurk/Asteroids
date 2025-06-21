@@ -1,7 +1,11 @@
+import { Transform } from "../../utils/Math/Transform.js";
+
 export class Component{
     constructor(gl)
     {
         this.gl = gl;
+
+        this.transform = new Transform();
     }
 
     async loadShaderSource(path) {
@@ -10,6 +14,26 @@ export class Component{
             throw new Error(`Failed to load shader: ${path}`);
         }
         return await response.text();
+    }
+
+    setPosition(position)
+	{
+		this.transform.setPosition(position);
+	}
+
+	setRotation(rotation)
+	{
+		this.transform.setRotation(rotation);
+	}
+
+    setTransform(transform) {
+        this.transform = transform;
+        return this;
+    }
+
+    draw()
+    {
+        // TODO
     }
 
     // This is a helper function for compiling the given vertex and fragment shader source code into a program.

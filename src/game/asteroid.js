@@ -1,4 +1,5 @@
 import { Actor } from "../core/actor.js";
+import { ConvexCollisionComponent } from "../objects/components/convex_collision_component.js";
 import { Transform } from "../utils/Math/Transform.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
 import { PerlinNoise } from "../utils/Noise/perlin_noise.js";
@@ -62,6 +63,14 @@ export class Asteroid extends Actor {
             this.transform
         );
         this.mesh.setMesh(positions, texCoords, normals);
+
+        // tear down any old component
+        if (this.collisionComponent) {
+            this.world.unregisterCollisionComponent(this.collisionComponent);
+        }
+
+        // build & register the new convex hull sampler
+        this.AddCollisionComponent();
     }
 
     static buildIcosphere(iterations = 2, bApplyNoise = false, macroScale = 2.0, macroAmp = 0.5, microScale = 10.0, microAmp = 0.1, transform = Transform.random()) {
@@ -110,6 +119,7 @@ export class Asteroid extends Actor {
                 const b = getMidpoint(i1, i2);
                 const c = getMidpoint(i2, i0);
 
+                // newFaces.push([i0, a, c], [i1, b, a], [i2, c, b], [a, b, c]);
                 newFaces.push([i0, c, a], [i1, a, b], [i2, b, c], [a, c, b]);
             }
             faces = newFaces;
@@ -142,14 +152,9 @@ export class Asteroid extends Actor {
                 triVerts[i] = v;
             }
 
-            if (iterations % 2 === 1) {
-                // Flip face winding if subdivision count is odd
-                faces = faces.map(([i0, i1, i2]) => [i0, i2, i1]);
-            }
-
             const edge1 = triVerts[1].clone().subtract(triVerts[0]);
             const edge2 = triVerts[2].clone().subtract(triVerts[0]);
-            const normal = edge2.cross(edge1).normalize(); // order matches corrected winding
+            const normal = edge1.cross(edge2).normalize(); // order matches corrected winding
 
             for (const v of triVerts) {
                 positions.push(v.x, v.y, v.z);

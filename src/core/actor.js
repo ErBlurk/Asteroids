@@ -3,6 +3,8 @@ import { MeshComponent } from "../objects/components/mesh_component.js";
 import { GameObject } from "../objects/object.js";
 import { Transform } from "../utils/Math/Transform.js";
 import { BoxComponent } from "../objects/components/box_component.js";
+import { ConvexCollisionComponent } from "../objects/components/convex_collision_component.js";
+
 
 export class Actor extends GameObject {
     constructor(gl, world, transform) {
@@ -10,21 +12,30 @@ export class Actor extends GameObject {
 
         this.gl = gl;
         this.world = world;
-        this.transform = transform;
-        if(this.transform == null)
-        {
-            this.transform = new Transform();
-        }
+    
         this.bTickEnable = true;
         this.bHidden = false;
         this.bDirty = false;
+        this.bPendingDestroy = false;
+
+        if (transform instanceof Transform) {
+            this.transform = transform;
+        } else {
+            this.transform = new Transform();
+        }
 
         this.mesh = new MeshComponent(gl);
         this.box = new BoxComponent(gl);
+        this.collision = null;
 
         this.components = [];
         this.components.push(this.mesh);
         this.components.push(this.box);
+    }
+
+    OnCollisionTrigger(actor)
+    {
+        console.log("Colliding");
     }
 
     Tick(deltaTime)
@@ -82,6 +93,12 @@ export class Actor extends GameObject {
         }
     }
 
+    AddCollisionComponent()
+    {
+        this.collision = new ConvexCollisionComponent(this.mesh);
+        this.components.push(this.collision);
+    }
+    
     processLoadedMesh(objMesh) {
         const box = objMesh.getBoundingBox();
         const shift = [
@@ -107,12 +124,16 @@ export class Actor extends GameObject {
         t.setPosition(this.transform.position);
         t.setRotation(this.transform.rotation);
 
+        // Bounding box
         let x = this.mesh.boundingBox?.max[0] - this.mesh.boundingBox?.min[0];
         let y = this.mesh.boundingBox?.max[1] - this.mesh.boundingBox?.min[1];
         let z = this.mesh.boundingBox?.max[2] - this.mesh.boundingBox?.min[2];
         t.setScale3(x, y, z);
 
         this.box.init(t);
+
+        // once mesh is ready, create and register collision component:
+        this.AddCollisionComponent();
     }
 
 
@@ -133,13 +154,25 @@ export class Actor extends GameObject {
     DrawComponents(mvp)
     {
         for (let component of this.components) {
-            if (component instanceof MeshComponent)  { //  || component instanceof BoxComponent) {
-                component.setPosition(this.transform.position);
-                component.setRotation(this.transform.rotation);
-                //component.setTransform(this.transform);
-                // component.draw( mvp );
+            if(component)
+            {
+                if (component instanceof MeshComponent || component instanceof ConvexCollisionComponent)  { //  || component instanceof BoxComponent) {
+                    component.setPosition(this.transform.position);
+                    component.setRotation(this.transform.rotation);
+                }
+                component.draw( mvp );
             }
-            component.draw( mvp );
         }
+    }
+
+    Destroy()
+    {
+        this.bPendingDestroy = true;
+    }
+
+    onCollision(actor)
+    {
+        this.Destroy();
+        console.log("Collided");
     }
 }

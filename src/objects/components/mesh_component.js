@@ -104,6 +104,7 @@ export class MeshComponent extends Component
 			tMax[2] = Math.max(tMax[2], tz);
 		}
 
+		this.boundingBox = { min, max };
 		this.boundingBox.min = tMin;
 		this.boundingBox.max = tMax;
 	}
@@ -197,7 +198,6 @@ export class MeshComponent extends Component
 			this.setMesh(this._lastVertPos, this._lastTexCoords);
 		}
 	}
-
 
   
 	// This method is called when the user changes the state of the

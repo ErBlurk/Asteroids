@@ -18,7 +18,10 @@ window.onload = function() {
 };
 
 export function WindowResize() {
-    world.renderer.UpdateCanvasSize();
+    if(world && world.renderer)
+    {
+        world.renderer.UpdateCanvasSize();
+    }
 }
 
 window.WindowResize = WindowResize;

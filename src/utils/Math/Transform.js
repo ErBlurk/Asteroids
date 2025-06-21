@@ -19,49 +19,37 @@ export class Transform {
 
         // Cached Matrix4
         this.matrix = new Matrix4();
-        this._dirty = true;
     }
 
     // Mark “dirty” when any component changes
     setPosition3(x, y, z) {
         this.position.set(x, y, z);
-        this._dirty = true;
         return this;
     }
 
     setRotation3(pitch, yaw, roll) {
         this.rotation.set(pitch, yaw, roll);
-        this._dirty = true;
         return this;
     }
 
     setScale3(sx, sy, sz) {
         this.scale.set(sx, sy, sz);
-        this._dirty = true;
         return this;
     }
 
     setPosition(position) {
         this.position.set(position.x, position.y, position.z);
-        this._dirty = true;
         return this;
     }
 
     setRotation(rotation) {
         this.rotation.set(rotation.pitch, rotation.yaw, rotation.roll);
-        this._dirty = true;
         return this;
     }
 
     setScale(scale) {
         this.scale.set(scale.x, scale.y, scale.z);
-        this._dirty = true;
         return this;
-    }
-
-    // Call this if you've mutated position/rotation/scale directly
-    markDirty() {
-        this._dirty = true;
     }
 
     // Computes (or returns cached) local‐to‐world matrix: T * R * S
@@ -112,6 +100,15 @@ export class Transform {
         t.scale.y = (Math.random() * 2 - 1) * rangeScale;
         t.scale.z = (Math.random() * 2 - 1) * rangeScale;
 
+        return t;
+    }
+
+    clone()
+    {
+        let t = new Transform();
+        t.setPosition(this.position);
+        t.setRotation(this.rotation);
+        t.matrix = this.matrix.clone();
         return t;
     }
 }

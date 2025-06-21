@@ -5,12 +5,12 @@
 ///////////////////////////////////////////////////////////////////////////////////
 
 import { Transform } from "../utils/Math/Transform.js";
-import { Actor } from "./actor.js"
 import { Asteroid } from "../game/asteroid.js";
 import { Renderer } from "./renderer.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
-import { Matrix4 } from "../utils/Math/Matrix4.js";
 import { DirectionalLight } from "./directional_light.js";
+import { ConvexCollisionComponent } from "../objects/components/convex_collision_component.js";
+import { SpatialGrid } from "../objects/spatial_grid.js";
 
 export class World {
     constructor() {
@@ -23,7 +23,39 @@ export class World {
 
         this.dirLight = new DirectionalLight(new Vector3(0.5, 1, -1));
 
+        // Collision system
+        this.grid = new SpatialGrid(20);
+
+        // Scene generation
         this.SpawnAsteroids();
+
+        //this.DebugSpheres();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Scene Managment
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    DebugSpheres() 
+    {
+        let pA = new Vector3(2, 5, 0);
+        let pB = new Vector3(-2, 5, 0);
+
+        const subdivisions = 2; // + Math.floor(Math.random() * 2); // 2 or 3
+        const macroScale = 1; //0.1 + Math.random() * 0.4;
+        const macroAmp = 0; //0.6 + Math.random() * 1.2;
+        const microScale = 1; // 5.0 + Math.random() * 10.0;
+        const microAmp = 0; //0.05 + Math.random() * 0.15;
+
+        let t = new Transform();
+        t.setPosition(pA);
+        let actor = new Asteroid(this.gl, this, t, subdivisions, true, macroScale, macroAmp, microScale, microAmp);
+        this.SpawnActor(actor);
+
+        t = new Transform();
+        t.setPosition(pB);
+        actor = new Asteroid(this.gl, this, t, subdivisions, true, macroScale, macroAmp, microScale, microAmp);
+        this.SpawnActor(actor);
     }
 
     SpawnAsteroids()
@@ -73,22 +105,64 @@ export class World {
         }        
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Actor handling
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    _removeFromEfficientArray(array, item) {
-        const index = array.indexOf(item);
-        if (index > -1) {
-            // Swap the item to be removed with the last item in the array
-            const lastItem = array[array.length - 1];
-            array[index] = lastItem;
-            // Remove the last item (which is now the one we wanted to remove)
-            array.pop();
-            return true; // Item was found and removed
+    HandleCollisions() {
+        // Broad-phase: clear grid and bucket all collision components from actors
+        this.grid.clear();
+        const collisions = [];
+        const actorMap = new Map();
+        for (const actor of this.actors) {
+            const col = actor.collision;
+            if (!col) continue;
+            collisions.push(col);
+            actorMap.set(col, actor);
+            this.grid.add(col);
         }
-        return false; // Item not found
+    
+        // Prepare for duplicate-pair skipping
+        const seen = new Set();
+        const indexMap = new Map(collisions.map((c, i) => [c, i]));
+    
+        // Narrow-phase: test only nearby buckets
+        for (const actorA of this.actors) {
+            const colA = actorA.collision;
+            if (!colA) continue;
+    
+            const pA = colA.transform.position;
+            const rA = colA.radius;
+    
+            for (const colB of this.grid.queryNearby(colA)) {
+                if (colA === colB) continue;
+    
+                // unique key per unordered pair
+                const iA = indexMap.get(colA);
+                const iB = indexMap.get(colB);
+                const key = iA < iB ? `${iA},${iB}` : `${iB},${iA}`;
+                if (seen.has(key)) continue;
+                seen.add(key);
+    
+                const pB = colB.transform.position;
+                const dx = pA.x - pB.x;
+                const dy = pA.y - pB.y;
+                const dz = pA.z - pB.z;
+                const dist2 = dx*dx + dy*dy + dz*dz;
+    
+                const rB = colB.radius;
+                const sumR = rA + rB;
+    
+                // overlap test (squared)
+                if (dist2 < sumR * sumR) {
+                    const actorB = actorMap.get(colB);
+                    actorA.onCollision(actorB);
+                    actorB.onCollision(actorA);
+                }
+            }
+        }
     }
+    
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Game loop - frame spawner
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Main game loop
     StartGameLoop() {
@@ -99,11 +173,17 @@ export class World {
             this.lastFrameTime = currentTime;
 
             // 1. Tick (Update) all actors
-            for (let actor of this.tickingActors) {
+            for (let actor of this.actors) {
                 if (actor.bTickEnable) {
                     actor.Tick(deltaTime);
                 }
+                if(actor.bPendingDestroy) {
+                    this.RemoveActor(actor);
+                }
             }
+
+            // 1.bis Collision handling
+            this.HandleCollisions();
 
             // 2. Draw the scene
             this.DrawScene();
@@ -121,6 +201,23 @@ export class World {
 
         // Start the loop
         requestAnimationFrame(gameLoop);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Actor handling
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    _removeFromEfficientArray(array, item) {
+        const index = array.indexOf(item);
+        if (index > -1) {
+            // Swap the item to be removed with the last item in the array
+            const lastItem = array[array.length - 1];
+            array[index] = lastItem;
+            // Remove the last item (which is now the one we wanted to remove)
+            array.pop();
+            return true; // Item was found and removed
+        }
+        return false; // Item not found
     }
 
     SpawnActor(actor) {
