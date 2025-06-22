@@ -10,3 +10,5 @@ Written in plain JavaScript and WebGL.
 - procedural mesh generation (asteroids)
 - simple collision system (spheres)
 - centralized scene managment (world.js)
+- skybox with four color gradient
+- basic HUD (crosshair)
