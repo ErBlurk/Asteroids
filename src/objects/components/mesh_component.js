@@ -219,8 +219,8 @@ export class MeshComponent extends Component
 		const gl = this.gl;
 
 		gl.useProgram(this.prog);
-		gl.uniformMatrix4fv(this.modelMatrixLoc, false, this.modelMatrix.elements);
 		gl.uniformMatrix4fv(this.mvpLoc, false, trans);
+		gl.uniformMatrix4fv(this.modelMatrixLoc, false, this.modelMatrix.elements);
 	
 		// Vertex positions
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertBuffer);
@@ -278,6 +278,13 @@ export class MeshComponent extends Component
 
 		gl.useProgram(this.prog);
 		gl.uniform1i(this.useTextureLoc, show ? 1 : 0); 										// Enable/disable inside the shader
+	}
+
+	debug()
+	{
+		const gl = this.gl;
+		console.log("uMVP loc =", gl.getUniformLocation(this.prog,"uModelViewProjection"));
+		console.log("uM   loc =", gl.getUniformLocation(this.prog,"uModelMatrix"));		
 	}
 }
 

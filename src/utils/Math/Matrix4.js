@@ -329,38 +329,40 @@ export class Matrix4 {
         return mvp;
     }
 
-    static GetViewMatrix(translationX, translationY, translationZ, rotationX, rotationY) {
-        // Rotation around X axis
-         var rotX = [
-            1, 0, 							0, 						0,
-            0, Math.cos(rotationX), 		Math.sin(rotationX),	0,
-            0, Math.sin(rotationX) * -1, 	Math.cos(rotationX), 	0,
-            0, 0, 							0, 						1
-        ];
-
-        // Rotation around Y axis
-        var rotY = [
-            Math.cos(rotationY), 	0, Math.sin(rotationY) * -1, 	0,
-            0, 						1, 0, 							0,
-            Math.sin(rotationY), 	0, Math.cos(rotationY), 		0,
-            0, 						0, 0, 							1
-        ];
-
-        // Total rotation
-        var rotXY = this.MatrixMult(rotX, rotY);
-
-        // Transform position matrix
-        var trans = [
+    static GetViewMatrix(cx, cy, cz, pitch, yaw) {
+        // build inverse-translation
+        const trans = [
             1, 0, 0, 0,
             0, 1, 0, 0,
             0, 0, 1, 0,
-            translationX, translationY, translationZ, 1
+            -cx, -cy, -cz, 1
         ];
 
-        // Calculate the resultin projected transform matrix, don't invert order
-        var model = this.MatrixMult(rotXY, trans); // Model = Rotation * Translation
-        return new Matrix4(model);
+        // build inverse-rotation X (pitch)
+        const cp = Math.cos(-pitch), sp = Math.sin(-pitch);
+        const invRotX = [
+            1, 0, 0, 0,
+            0, cp, sp, 0,
+            0, -sp, cp, 0,
+            0, 0, 0, 1
+        ];
+
+        // build inverse-rotation Y (yaw)
+        const cy2 = Math.cos(-yaw), sy2 = Math.sin(-yaw);
+        const invRotY = [
+            cy2, 0, -sy2, 0,
+            0, 1, 0, 0,
+            sy2, 0, cy2, 0,
+            0, 0, 0, 1
+        ];
+
+        // view = invRotX * invRotY * trans
+        let view = Matrix4.MatrixMult(invRotY, trans);
+        view = Matrix4.MatrixMult(invRotX, view);
+
+        return new Matrix4(view);
     }
+      
     
     static GetPerspective(fovY_radians, aspect, near, far) {
         const s = 1 / Math.tan(fovY_radians / 2);

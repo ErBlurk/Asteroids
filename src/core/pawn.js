@@ -1,5 +1,8 @@
 import { Actor } from "./actor.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
+import { Matrix4 } from "../utils/Math/Matrix4.js";
+import { Transform } from "../utils/Math/Transform.js";
+import { Rotator } from "../utils/Math/Rotator.js";
 
 var MIN_Y_ROT = -80.0;
 var MAX_Y_ROT = 80.0;
@@ -18,7 +21,7 @@ export class Pawn extends Actor {
         this.verticalSpeed = 5; // Adjust for Q E movement
 
         // Third-person offset in pawn-local space:
-        this.cameraOffset = new Vector3(0, 2, -5);
+        this.cameraOffset = new Vector3(0, 0.5, -6);
 
         this.acceleration = 10;          // units/sec²
         this.maxSpeed = 10;          // units/sec
@@ -30,9 +33,17 @@ export class Pawn extends Actor {
         // Camera smoothing factor (0–1):
         this.cameraLerp = 0.15;
 
+        // ——— Spring-damper parameters for the camera ———
+        this.cameraSpringVelocity = Vector3.zero();    // current camera velocity
+        this.cameraSpringStiffness = 500;               // "spring" constant
+        this.cameraSpringDamping   = 50;               // damping coefficient
+
         this.InitController();
 
         this.LoadObj("../assets/objects/voyager_1.obj");
+        const VertShader = './src/shaders/voyager.vert';
+        const FragShader = './src/shaders/voyager.frag';
+        this.InitShaders(VertShader, FragShader);
     }
 
     Tick(deltaTime) {
@@ -61,6 +72,83 @@ export class Pawn extends Actor {
         this.transform.position.addInPlace(this.velocity.clone().multiplyScalar(dt));
     }
 
+    /**
+     * Orbit the camera around the pawn at `this.cameraOffset`
+     * (only yaw-rotated, with a fixed vertical offset) and
+     * make it look in the pawn’s facing direction.
+     */
+    CameraLook() {
+        const camPos = this.world.renderer.position;
+        camPos.x += (this.transform.position.x - camPos.x) * this.cameraLerp;
+        camPos.y += (this.transform.position.y - camPos.y) * this.cameraLerp;
+        camPos.z += (this.transform.position.z - camPos.z) * this.cameraLerp;
+    }
+
+    /**
+     * Spring-damper orbit around the pawn.
+     * Compute desired camera position = pawnPos + rotated offset.
+     * Apply spring + damping to camera velocity.
+     * Update camera position.  
+     * Keep camera yaw/pitch locked to pawn’s rotation.
+     */
+    CameraOrbit(direction, dt, useSpring = false) {
+        const pawnPos = this.transform.position;
+        const pitch   = this.transform.rotation.pitch;
+        const yaw     = this.transform.rotation.yaw;
+    
+        // Compute horizontal forward: from input or pawn yaw
+        let forward;
+        if (direction.lengthSq() > 1e-4) {
+            forward = direction.clone().normalize();
+        } else {
+            forward = new Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+        }
+    
+        // World up and right vectors
+        const up    = new Vector3(0, 1, 0);
+        const right = up.clone().cross(forward).normalize();
+    
+        // Tilt forward by pitch around right axis in the forward–up plane
+        const cosP = Math.cos(pitch);
+        const sinP = -Math.sin(pitch);
+
+        let pitchedForward = forward.clone().multiplyScalar(cosP);
+        pitchedForward.add(up.clone().multiplyScalar(sinP));
+        pitchedForward.normalize();
+    
+        // Desired camera position = pawnPos + right*X + up*Y + pitchedForward*Z
+        let desired = pawnPos.clone()
+        desired.addInPlace(right.multiplyScalar(this.cameraOffset.x));
+        desired.addInPlace(up.multiplyScalar(this.cameraOffset.y));
+        desired.addInPlace(pitchedForward.multiplyScalar(this.cameraOffset.z));
+    
+        // Fetch current camera position
+        const camPos = this.world.renderer.position;
+    
+        if (!useSpring) {
+            // Instant snap (no lag)
+            camPos.set(desired.x, desired.y, desired.z);
+        } else {
+            // Spring-damper: F = k·x − c·v
+            const disp     = desired.clone().subtract(camPos);
+            const springF  = disp.multiplyScalar(this.cameraSpringStiffness);
+            const dampingF = this.cameraSpringVelocity.clone().multiplyScalar(this.cameraSpringDamping);
+            const accel    = springF.subtract(dampingF);
+    
+            // integrate velocity & update
+            this.cameraSpringVelocity.addInPlace(accel.multiplyScalar(dt));
+            camPos.addInPlace(this.cameraSpringVelocity.clone().multiplyScalar(dt));
+        }
+    
+        // Write back camera position
+        this.world.renderer.position.set(camPos.x, camPos.y, camPos.z);
+    
+        // Rebuild view matrix so the camera looks at the pawn
+        const eye    = [ camPos.x, camPos.y, camPos.z ];
+        const center = [ pawnPos.x, pawnPos.y, pawnPos.z ];
+        this.world.renderer.viewMatrix = Matrix4.lookAt(eye, center, [0,1,0]);
+    }
+
     HandleInput(dt) {
         const world = this.world;
         const yaw = world.renderer.rotation.yaw;
@@ -68,74 +156,65 @@ export class Pawn extends Actor {
 
         // Build a unit “input direction” from WASD/QE:
         let input = new Vector3(0, 0, 0);
-        if (this.keysPressed['w']) input.z +=  1;
-        if (this.keysPressed['s']) input.z += -1;
-        if (this.keysPressed['a']) input.x += -1;
-        if (this.keysPressed['d']) input.x +=  1;
-        if (this.keysPressed['q']) input.y +=  1;
-        if (this.keysPressed['e']) input.y += -1;
+        if (this.keysPressed['w']) input.z +=  1;   // Forward
+        if (this.keysPressed['s']) input.z += -1;   // Backward
+        if (this.keysPressed['a']) input.x += -1;   // Left
+        if (this.keysPressed['d']) input.x +=  1;   // Right
+        if (this.keysPressed['q']) input.y += -1;   // Down
+        if (this.keysPressed['e']) input.y +=  1;   // Up
         if (input.lengthSq() > 0) input.normalize();
 
-        // Transform input from camera-local into world-space
-        const forward = new Vector3(
-            Math.sin(yaw) * Math.cos(pitch),
-            Math.sin(pitch),
-            -Math.cos(yaw) * Math.cos(pitch)
-        ).normalize();
-        const right = new Vector3(
-            Math.sin(yaw - Math.PI / 2),
-            0,
-            -Math.cos(yaw - Math.PI / 2)
-        ).normalize();
+        const cosYaw = Math.cos(yaw);
+        const sinYaw = Math.sin(yaw);
+        const cosPitch = Math.cos(pitch);
+        const sinPitch = Math.sin(pitch);
+
+        // forward points where the camera looks:
+        const forward = new Vector3(sinYaw * cosPitch, sinPitch, cosYaw * cosPitch).normalize();
+
+        // right is 90° to the right of forward, flattened on Y:
+        const right = new Vector3(cosYaw, 0, -sinYaw).normalize();
+
         const up = new Vector3(0, 1, 0);
 
-        // Combine into movement direction
-        const dir = new Vector3(0, 0, 0);
-        dir.addInPlace(forward.clone().multiplyScalar(input.z));
-        dir.addInPlace(right.clone().multiplyScalar(input.x));
-        dir.addInPlace(up.clone().multiplyScalar(input.y));
-        if (dir.lengthSq() > 0) dir.normalize();
+        // blend them with your input:
+        let direction = new Vector3();
+        direction.addInPlace(forward.clone().multiplyScalar(input.z));
+        direction.addInPlace(right.clone().multiplyScalar(input.x));
+        direction.addInPlace(up.clone().multiplyScalar(input.y));
+        direction.normalize();
 
         // Apply acceleration, friction, clamp & move pawn
-        this.AddMovementInput(dir, dt);
-
-        // Smooth camera follow
-        const camPos = world.renderer.position;
-        camPos.x += (this.transform.position.x - camPos.x) * this.cameraLerp;
-        camPos.y += (this.transform.position.y - camPos.y) * this.cameraLerp;
-        camPos.z += (this.transform.position.z - camPos.z) * this.cameraLerp;
+        this.AddMovementInput(direction, dt);
+        
+        // Orbit around actor camera
+        direction = new Vector3().addInPlace(forward.clone());
+        this.CameraOrbit(direction, dt, true);
 
         // Update on-screen position info
-        if (document.getElementById("posX")) document.getElementById("posX").innerHTML = camPos.x.toFixed(2);
-        if (document.getElementById("posY")) document.getElementById("posY").innerHTML = camPos.y.toFixed(2);
-        if (document.getElementById("posZ")) document.getElementById("posZ").innerHTML = camPos.z.toFixed(2);
-
-        world.DrawScene();
+        if (document.getElementById("posX")) document.getElementById("posX").innerHTML = this.transform.position.x.toFixed(2);
+        if (document.getElementById("posY")) document.getElementById("posY").innerHTML = this.transform.position.y.toFixed(2);
+        if (document.getElementById("posZ")) document.getElementById("posZ").innerHTML = this.transform.position.z.toFixed(2);
     }
-
 
     _onMouseMove = (event) => {
         const canvas = this.world.renderer.canvas;
         const clamp = (v, min, max) => v < min ? min : v > max ? max : v;
         const speed = 0.002;  // tweak sensitivity
 
-        this.world.renderer.rotation.yaw -= event.movementX * speed;
-        this.world.renderer.rotation.pitch -= event.movementY * speed;
-        this.world.renderer.rotation.pitch = clamp(
-            this.world.renderer.rotation.pitch, MIN_Y_ROT, MAX_Y_ROT
-        );
+        this.transform.rotation.yaw += event.movementX * speed;
+        this.transform.rotation.pitch += event.movementY * speed;
+        this.transform.rotation.pitch = clamp(this.transform.rotation.pitch, MIN_Y_ROT, MAX_Y_ROT);
 
-        this.world.renderer.UpdateProjectionMatrix();
-        this.world.DrawScene();
+        this.world.renderer.rotation.yaw = this.transform.rotation.yaw;
+        this.world.renderer.rotation.pitch = this.transform.rotation.pitch;
 
         // update UI if present…
         if (document.getElementById("rotX")) document.getElementById("rotX").innerHTML = (this.world.renderer.rotation.yaw * 180 / Math.PI).toFixed(2);
         if (document.getElementById("rotY")) document.getElementById("rotY").innerHTML = (this.world.renderer.rotation.pitch * 180 / Math.PI).toFixed(2);
     }
 
-
     InitController() {
-        const world = this.world;
         const canvas = this.world.renderer.canvas;
 
         const clamp = (value, min, max) => {
@@ -170,5 +249,11 @@ export class Pawn extends Actor {
                 document.removeEventListener('mousemove', this._onMouseMove, false);
             }
         });
+    }
+
+    onCollision(actor)
+    {
+        actor.Destroy();
+        //console.log("Collided");
     }
 }

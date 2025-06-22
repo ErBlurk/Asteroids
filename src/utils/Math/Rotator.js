@@ -41,6 +41,13 @@ export class Rotator {
         return this;
     }
 
+    addInPlace(rotation) {
+        this.pitch += rotation.pitch;
+        this.yaw += rotation.yaw;
+        this.roll += rotation.roll;
+        return this;
+    }
+
     // Converts these Euler angles into a 4×4 rotation matrix (Matrix4).
     // Matrix4 class is defined later; this method returns a new Matrix4.
     toMatrix4() {

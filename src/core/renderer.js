@@ -80,8 +80,6 @@ export class Renderer {
         this.UpdateProjectionMatrix();
     }
 
-        
-
     UpdateProjectionMatrix() {        
         var r = this.canvas.width / this.canvas.height;
         var n = (this.position.z - MAX_RENDER_DISTANCE);
@@ -100,7 +98,7 @@ export class Renderer {
         // ];
     }
 
-    // DEPRECATED - This is the main function that handled WebGL drawing
+    // This is the main function that handled WebGL drawing
     GetModelViewProjection() 
     {
         return Matrix4.GetModelViewProjection(this.perspectiveMatrix, this.position.x, this.position.y, this.position.z, this.rotation.pitch, this.rotation.yaw);

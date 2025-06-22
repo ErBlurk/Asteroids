@@ -103,12 +103,12 @@ export class Transform {
         return t;
     }
 
-    clone()
-    {
-        let t = new Transform();
-        t.setPosition(this.position);
-        t.setRotation(this.rotation);
-        t.matrix = this.matrix.clone();
+    clone() {
+        const t = new Transform();
+        t.position = this.position.clone();
+        t.rotation = this.rotation.clone();
+        t.scale    = this.scale.clone();
         return t;
-    }
+      }
+      
 }

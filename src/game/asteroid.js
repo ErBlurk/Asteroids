@@ -25,7 +25,7 @@ export class Asteroid extends Actor {
     }
 
     Tick(deltaTime) {
-        // 1) Orbit around world origin
+        // Orbit around world origin
         const angle = this._orbitalSpeed * deltaTime;
         const axis = this._orbitalAxis;
         const pos = this.transform.position.clone();  // current world-pos
@@ -43,7 +43,7 @@ export class Asteroid extends Actor {
         // update transform
         this.transform.setPosition(newPos);
 
-        // 2) Self-rotation
+        // Self-rotation
         const sv = this._selfRotVelocity;
         this.transform.rotation.add(
             sv.x * deltaTime,

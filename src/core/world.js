@@ -9,8 +9,8 @@ import { Asteroid } from "../game/asteroid.js";
 import { Renderer } from "./renderer.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
 import { DirectionalLight } from "./directional_light.js";
-import { ConvexCollisionComponent } from "../objects/components/convex_collision_component.js";
 import { SpatialGrid } from "../objects/spatial_grid.js";
+import { Actor } from "./actor.js";
 
 export class World {
     constructor() {
@@ -29,7 +29,7 @@ export class World {
         // Scene generation
         this.SpawnAsteroids();
 
-        //this.DebugSpheres();
+        // this.DebugSpheres();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ export class World {
 
     DebugSpheres() 
     {
-        let pA = new Vector3(2, 5, 0);
+        let pA = new Vector3(0, 0, 0);
         let pB = new Vector3(-2, 5, 0);
 
         const subdivisions = 2; // + Math.floor(Math.random() * 2); // 2 or 3
