@@ -80,10 +80,11 @@ export class ConvexCollisionComponent extends Component {
         this.uMVPLoc = this.gl.getUniformLocation(this.prog, 'uMVP');
     }
 
-    draw(vpMatrix) {
+    draw(view, projection) {
         if (bDebug)
         {
-            this.drawDebug(vpMatrix);
+            let view_projection = this.BuildViewProjectionMatrix(view, projection);
+            this.drawDebug(view_projection);
         }
     }
 

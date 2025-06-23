@@ -114,6 +114,16 @@ export class Renderer {
         return viewProjectionResult.elements; // Return the underlying Float32Array for gl.uniformMatrix4fv
     }
 
+    GetViewMatrix() {
+        const viewMatrix = Matrix4.GetViewMatrix(this.position.x, this.position.y, this.position.z, this.rotation.pitch, this.rotation.yaw);
+        return viewMatrix.elements;
+    }
+
+    GetProjectionMatrix() {
+        const projectionMatrix = new Matrix4(this.perspectiveMatrix);
+        return projectionMatrix.elements;
+    }
+
     DrawSkybox() {
         const gl = this.gl;
         const prog = this.skyboxProgram;

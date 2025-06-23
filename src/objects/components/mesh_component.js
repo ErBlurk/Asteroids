@@ -16,21 +16,44 @@ export class MeshComponent extends Component
 		this.meshVS = meshVS;
 
 		this.prog = this.InitShaderProgram(this.meshVS, this.meshFS);
-	
+		gl.useProgram(this.prog);
+		
 		// Get attribute/uniform locations
 		this.vertPosLoc 		= gl.getAttribLocation(this.prog, "aPosition");
 		this.texCoordLoc 		= gl.getAttribLocation(this.prog, "aTexCoord");
 		this.mvpLoc 			= gl.getUniformLocation(this.prog, "uModelViewProjection");
-		this.modelMatrixLoc 	= gl.getUniformLocation(this.prog, "uModelMatrix")
 		this.swapYZLoc 			= gl.getUniformLocation(this.prog, "uSwapYZ");
 		this.useTextureLoc 		= gl.getUniformLocation(this.prog, "uUseTexture");
+		this.modelMatrixLoc 	= gl.getUniformLocation(this.prog, "uModelMatrix")
+
+		// Normals/lighting attributes
+		this.normalMatrixLoc  = gl.getUniformLocation(this.prog, "uNormalMatrix");
+		this.lightDirLoc      = gl.getUniformLocation(this.prog, "uLightDirection");
+		this.shininessLoc     = gl.getUniformLocation(this.prog, "uShininess");
 	
 		// Buffers
 		this.vertBuffer 		= gl.createBuffer();
 		this.texCoordBuffer 	= gl.createBuffer();
-	
+		this.normalBuffer     	= gl.createBuffer();
+
+		// Attributes
+		this.vertPosLoc   = gl.getAttribLocation(this.prog, "aPosition");
+		this.texCoordLoc  = gl.getAttribLocation(this.prog, "aTexCoord");
+		this.normalLoc    = gl.getAttribLocation(this.prog, "aNormal");
+
 		// Texture
 		this.texture 			= gl.createTexture();
+
+		this.InitDefault();
+	}
+
+	InitDefault()
+	{
+		const gl = this.gl;
+
+		gl.uniform1f(this.shininessLoc, 32.0);
+
+		this.setLightDir(1, 1, 0.5);
 	}
 
 	setPosition(position)
@@ -172,6 +195,7 @@ export class MeshComponent extends Component
 			this.normalBuffer = gl.createBuffer();
 			this.normalLoc = gl.getAttribLocation(this.prog, "aNormal");
 		}
+
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
 	}
@@ -184,14 +208,19 @@ export class MeshComponent extends Component
 		if (!prog) throw new Error("Failed to compile shaders");
 		this.prog = prog;                                        // install
 
-		// re-fetch all your attrib/uniform locations:
-		this.vertPosLoc = gl.getAttribLocation(prog, "aPosition");
-		this.texCoordLoc = gl.getAttribLocation(prog, "aTexCoord");
-		this.mvpLoc = gl.getUniformLocation(prog, "uModelViewProjection");
-		this.modelMatrixLoc = gl.getUniformLocation(prog, "uModelMatrix");
-		this.swapYZLoc = gl.getUniformLocation(prog, "uSwapYZ");
-		this.useTextureLoc = gl.getUniformLocation(prog, "uUseTexture");
-		// etc...
+		// re-fetch all attrib/uniform locations:
+		// Get attribute/uniform locations
+		this.vertPosLoc 		= gl.getAttribLocation(this.prog, "aPosition");
+		this.texCoordLoc 		= gl.getAttribLocation(this.prog, "aTexCoord");
+		this.mvpLoc 			= gl.getUniformLocation(this.prog, "uModelViewProjection");
+		this.swapYZLoc 			= gl.getUniformLocation(this.prog, "uSwapYZ");
+		this.useTextureLoc 		= gl.getUniformLocation(this.prog, "uUseTexture");
+		this.modelMatrixLoc 	= gl.getUniformLocation(this.prog, "uModelMatrix")
+
+		// Normals/lighting attributes
+		this.normalMatrixLoc  = gl.getUniformLocation(this.prog, "uNormalMatrix");
+		this.lightDirLoc      = gl.getUniformLocation(this.prog, "uLightDirection");
+		this.shininessLoc     = gl.getUniformLocation(this.prog, "uShininess");
 
 		// then re-bind your existing vertex data:
 		if (this._lastVertPos && this._lastTexCoords) {
@@ -214,24 +243,48 @@ export class MeshComponent extends Component
 	// This method is called to draw the triangular mesh.
 	// The argument is the transformation matrix, the same matrix returned
 	// by the GetModelViewProjection function above.
-	draw( trans ) 
+	draw(view, projection) 
 	{
 		const gl = this.gl;
-
 		gl.useProgram(this.prog);
-		gl.uniformMatrix4fv(this.mvpLoc, false, trans);
+		//gl.disable(gl.CULL_FACE);
+		//gl.frontFace(gl.CW);
+
+
+		let viewMatrix = new Matrix4(view);
+		let projectionMatrix = new Matrix4(projection);
+		let view_projection = projectionMatrix.multiply(viewMatrix);
+
+		gl.uniformMatrix4fv(this.mvpLoc, false, view_projection.elements);
 		gl.uniformMatrix4fv(this.modelMatrixLoc, false, this.modelMatrix.elements);
 	
-		// Vertex positions
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertBuffer);
-		gl.enableVertexAttribArray(this.vertPosLoc);
-		gl.vertexAttribPointer(this.vertPosLoc, 3, gl.FLOAT, false, 0, 0);
+		// Normal matrix
+		let modelViewMatrix = viewMatrix.multiply(this.modelMatrix);
+		let normalMatrix = new Matrix4(modelViewMatrix);
+		normalMatrix.invert();
+		normalMatrix.transpose();
 
-		// Texture coordinates
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordBuffer);
-		gl.enableVertexAttribArray(this.texCoordLoc);
-		gl.vertexAttribPointer(this.texCoordLoc, 2, gl.FLOAT, false, 0, 0);
-	
+		let nm = normalMatrix.elements;
+		var normalTransform = [
+		  nm[0], nm[1], nm[2],   // first column: m00, m10, m20
+		  nm[4], nm[5], nm[6],   // second column: m01, m11, m21
+		  nm[8], nm[9], nm[10]   // third column: m02, m12, m22
+		];
+		gl.uniformMatrix3fv(this.normalMatrixLoc, false, normalTransform);
+
+		// helper to bail on invalid locs
+		const bindAttrib = (loc, buf, size) => {
+			if (loc < 0) return;
+			gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+			gl.enableVertexAttribArray(loc);
+			gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
+		};
+
+		bindAttrib(this.vertPosLoc, this.vertBuffer, 3);
+		bindAttrib(this.normalLoc, this.normalBuffer, 3);
+		bindAttrib(this.texCoordLoc, this.texCoordBuffer, 2);
+
+
 		// Bind texture
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this.texture);
@@ -243,7 +296,7 @@ export class MeshComponent extends Component
 	
 	// This method is called to set the texture of the mesh.
 	// The argument is an HTML IMG element containing the texture data.
-	setTexture(img) 
+	setTexture(img, flipUV = false) 
 	{
 		const gl = this.gl;
 
@@ -260,9 +313,17 @@ export class MeshComponent extends Component
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
+		// Flip UV mapping if needed
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipUV);
+
 		// Add the texture
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img); 				// You can set the texture image data using the following command.
 		gl.generateMipmap(gl.TEXTURE_2D);
+
+		// Reset UV flipping
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
 
 		// Enable the texture
 		gl.uniform1i(this.useTextureLoc, 1);													// Enable texture visualization inside shader
@@ -278,6 +339,24 @@ export class MeshComponent extends Component
 
 		gl.useProgram(this.prog);
 		gl.uniform1i(this.useTextureLoc, show ? 1 : 0); 										// Enable/disable inside the shader
+	}
+
+	// This method is called to set the incoming light direction
+	setLightDir(x, y, z)
+	{
+		const gl = this.gl;
+
+		gl.useProgram(this.prog);
+		gl.uniform3f(this.lightDirLoc, x, y, z);
+	}
+
+	// This method is called to set the shininess of the material
+	setShininess(shininess)
+	{
+		const gl = this.gl;
+
+		gl.useProgram(this.prog);
+		gl.uniform1f(this.shininessLoc, shininess);
 	}
 
 	debug()

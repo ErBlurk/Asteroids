@@ -64,34 +64,38 @@ export class Actor extends GameObject {
     }
 
     LoadObj(param) {
-        if (typeof param === "string") {
-            // param is a URL
-            const objMesh = new ObjMesh();
-            const xhr = new XMLHttpRequest();
-
-            xhr.onreadystatechange = () => {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    objMesh.parse(xhr.responseText);
-                    this.processLoadedMesh(objMesh);
-                }
-            };
-
-            xhr.open("GET", param, true);
-            xhr.send();
-        } else if (param.files && param.files[0]) {
-            // param is a file input element
-            const reader = new FileReader();
-
-            reader.onload = (e) => {
+        return new Promise((resolve, reject) => {
+            if (typeof param === "string") {
+                // param is a URL
                 const objMesh = new ObjMesh();
-                objMesh.parse(e.target.result);
-                this.processLoadedMesh(objMesh);
-            };
+                const xhr = new XMLHttpRequest();
 
-            reader.readAsText(param.files[0]);
-        } else {
-            console.warn("LoadObj: invalid parameter", param);
-        }
+                xhr.onreadystatechange = () => {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        objMesh.parse(xhr.responseText);
+                        this.processLoadedMesh(objMesh);
+                    }
+                };
+
+                xhr.open("GET", param, true);
+                xhr.send();
+            } else if (param.files && param.files[0]) {
+                // param is a file input element
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    const objMesh = new ObjMesh();
+                    objMesh.parse(e.target.result);
+                    this.processLoadedMesh(objMesh);
+                };
+
+                reader.readAsText(param.files[0]);
+            } else {
+                console.warn("LoadObj: invalid parameter", param);
+            }
+
+            resolve();
+        });
     }
     
     processLoadedMesh(objMesh) {
@@ -136,21 +140,40 @@ export class Actor extends GameObject {
         this.components.push(this.collision);
     }
 
-    LoadTexture(param) {
-        if (param.files && param.files[0]) {
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                var img = document.getElementById('texture-img');
-                img.onload = function () {
-                    this.mesh.setTexture(img);
-                }
-                img.src = e.target.result;
+    async LoadTexture(path, flipUV = false) {
+        if (!path) return;
+
+        try {
+            // fetch the raw image file
+            const res = await fetch(path);
+            if (!res.ok) throw new Error(`Failed to load ${path}: ${res.status}`);
+            const blob = await res.blob();
+
+            // blob -> dataURL
+            const dataURL = await new Promise((resolve, reject) => {
+                const fr = new FileReader();
+                fr.onerror = () => reject(fr.error);
+                fr.onload = () => resolve(fr.result);
+                fr.readAsDataURL(blob);
+            });
+
+            // decode that Data-URL in an <img>
+            const img = new Image(); //document.getElementById("texture-img");
+            img.onload = () => {
+                // only now do we call setTexture – passing the same HTMLImageElement type
+                this.mesh.setTexture(img, flipUV);
+                // redraw if needed
+                this.world.DrawScene();
             };
-            reader.readAsDataURL(param.files[0]);
+            img.onerror = e => console.error("Image decode failed:", e);
+            img.src = dataURL;   // kick off the decode
+
+        } catch (err) {
+            console.error("LoadTexture error:", err);
         }
     }
 
-    DrawComponents(mvp)
+    DrawComponents(viewMatrix, projectionMatrix)
     {
         for (let component of this.components) {
             if(component)
@@ -159,7 +182,7 @@ export class Actor extends GameObject {
                     component.setPosition(this.transform.position);
                     component.setRotation(this.transform.rotation);
                 }
-                component.draw( mvp );
+                component.draw( viewMatrix, projectionMatrix );
             }
         }
     }

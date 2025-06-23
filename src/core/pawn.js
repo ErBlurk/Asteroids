@@ -1,8 +1,6 @@
 import { Actor } from "./actor.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
 import { Matrix4 } from "../utils/Math/Matrix4.js";
-import { Transform } from "../utils/Math/Transform.js";
-import { Rotator } from "../utils/Math/Rotator.js";
 
 var MIN_Y_ROT = -80.0;
 var MAX_Y_ROT = 80.0;
@@ -40,10 +38,18 @@ export class Pawn extends Actor {
 
         this.InitController();
 
-        this.LoadObj("../assets/objects/voyager_1.obj");
-        const VertShader = './src/shaders/voyager.vert';
-        const FragShader = './src/shaders/voyager.frag';
-        this.InitShaders(VertShader, FragShader);
+        this.InitMesh();
+    }
+
+    async InitMesh()
+    {
+        await this.LoadObj("../assets/objects/spaceship.obj");
+
+        const VertShader = './src/shaders/spaceship.vert';
+        const FragShader = './src/shaders/spaceship.frag';
+        await this.InitShaders(VertShader, FragShader);
+        
+        await this.LoadTexture("../assets/textures/spaceship_diffuse.png", true);
     }
 
     Tick(deltaTime) {

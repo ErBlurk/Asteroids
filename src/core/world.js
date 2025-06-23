@@ -21,7 +21,7 @@ export class World {
         this.tickingActors = [];
         this.visibleActors = [];
 
-        this.dirLight = new DirectionalLight(new Vector3(0.5, 1, -1));
+        this.directionalLight = new DirectionalLight(new Vector3(0.5, 1, -1));
 
         // Collision system
         this.grid = new SpatialGrid(20);
@@ -290,15 +290,16 @@ export class World {
     
     DrawScene() {
         const gl = this.gl;
-        const vpMatrix = this.renderer.GetViewProjectionMatrix();
-        const lightDir = this.dirLight.direction;  // a Vector3
+        const viewMatrix = this.renderer.GetViewMatrix();
+        const projectionMatrix = this.renderer.GetProjectionMatrix();
+        
+        const lightDir = this.directionalLight.direction;  // a Vector3
 
         this.gl.clearColor(0.0, 0.0, 0.0, 1.0); // optional, but safe to reset
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
         // Skybox first
         if (this.renderer.skybox) {
-            const vp = this.renderer.GetViewProjectionMatrix();
             this.renderer.skybox.draw();          
         }
 
@@ -313,7 +314,7 @@ export class World {
             gl.uniform3f(loc, lightDir.x, lightDir.y, lightDir.z);
 
             // now draw as you did before
-            actor.DrawComponents(vpMatrix);
+            actor.DrawComponents(viewMatrix, projectionMatrix);
         }
     }
     

@@ -142,9 +142,9 @@ export class ObjMesh
 		
 		for ( var i=0; i<this.face.length; ++i ) {
 			if ( this.face[i].length < 3 ) continue;
-			this.addTriangleToBuffers( vBuffer, tBuffer, nBuffer, i, 0, 1, 2 );
+			this.addTriangleToBuffers( vBuffer, tBuffer, nBuffer, i, 0, 2, 1 );
 			for ( var j=3; j<this.face[i].length; ++j ) {
-				this.addTriangleToBuffers( vBuffer, tBuffer, nBuffer, i, 0, j-1, j );
+				this.addTriangleToBuffers( vBuffer, tBuffer, nBuffer, i, 0, j, j-1 );
 			}
 		}
 		

@@ -362,8 +362,7 @@ export class Matrix4 {
 
         return new Matrix4(view);
     }
-      
-    
+
     static GetPerspective(fovY_radians, aspect, near, far) {
         const s = 1 / Math.tan(fovY_radians / 2);
     

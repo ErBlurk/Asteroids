@@ -103,4 +103,12 @@ export class Component{
         }
         return shader;
     }
+
+    BuildViewProjectionMatrix(view, projection)
+    {
+        let viewMatrix = new Matrix4(view);
+        let projectionMatrix = new Matrix4(projection);
+        let view_projection = projectionMatrix.multiply(viewMatrix);
+        return view_projection.elements;
+    }
 }
