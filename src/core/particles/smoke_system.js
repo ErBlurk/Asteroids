@@ -24,25 +24,25 @@ export class SmokeSystem
         this.direction        = direction;
         this.coneAngleRadians = coneAngleRadians;
 
-        // Cache simple icosphere (one subdivisions)
+        // Cache simple icosphere (one subdivisions) (use for each particle)
         this._sphereGeo = ProceduralIcosphere.buildIcosphere( 1, false );
 
         this.particles = [];
 
         this.lightDirection = this.world.directionalLight.direction;
         
-        this._initParticles();
+        this.initParticles();
     }
 
-    _initParticles()
+    initParticles()
     {
         for ( let i = 0; i < this.count; i++ )
         {
-            this._spawnParticle();
+            this.spawnParticle();
         }
     }
 
-    _spawnParticle()
+    spawnParticle()
     {
         const transform = new Transform();
 

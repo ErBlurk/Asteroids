@@ -25,6 +25,11 @@ export class MeshComponent extends Component
 		this.swapYZLoc 			= gl.getUniformLocation(this.prog, "uSwapYZ");
 		this.useTextureLoc 		= gl.getUniformLocation(this.prog, "uUseTexture");
 		this.modelMatrixLoc 	= gl.getUniformLocation(this.prog, "uModelMatrix")
+		this.useEmissiveLoc     = gl.getUniformLocation(this.prog, "uUseEmissive");
+
+		// texture locations
+		this.textureLoc = gl.getUniformLocation(this.prog, "uTexture");
+		this.emissiveTextureLoc = gl.getUniformLocation(this.prog, "uEmissiveTexture");
 
 		// Normals/lighting attributes
 		this.normalMatrixLoc  = gl.getUniformLocation(this.prog, "uNormalMatrix");
@@ -32,17 +37,18 @@ export class MeshComponent extends Component
 		this.shininessLoc     = gl.getUniformLocation(this.prog, "uShininess");
 	
 		// Buffers
-		this.vertBuffer 		= gl.createBuffer();
-		this.texCoordBuffer 	= gl.createBuffer();
-		this.normalBuffer     	= gl.createBuffer();
+		this.vertBuffer 	  = gl.createBuffer();
+		this.texCoordBuffer   = gl.createBuffer();
+		this.normalBuffer     = gl.createBuffer();
 
 		// Attributes
-		this.vertPosLoc   = gl.getAttribLocation(this.prog, "aPosition");
-		this.texCoordLoc  = gl.getAttribLocation(this.prog, "aTexCoord");
-		this.normalLoc    = gl.getAttribLocation(this.prog, "aNormal");
+		this.vertPosLoc   	  = gl.getAttribLocation(this.prog, "aPosition");
+		this.texCoordLoc      = gl.getAttribLocation(this.prog, "aTexCoord");
+		this.normalLoc    	  = gl.getAttribLocation(this.prog, "aNormal");
 
 		// Texture
 		this.texture 			= gl.createTexture();
+		this.emissiveTexture 	= gl.createTexture();
 
 		this.InitDefault();
 	}
@@ -54,6 +60,8 @@ export class MeshComponent extends Component
 		gl.uniform1f(this.shininessLoc, 50.0);
 
 		this.setLightDir(1, 1, 0.5);
+
+		gl.uniform1i(this.useEmissiveLoc, 0);  		// Disabled by default
 	}
 
 	setPosition(position)
@@ -222,6 +230,11 @@ export class MeshComponent extends Component
 		this.lightDirLoc      = gl.getUniformLocation(this.prog, "uLightDirection");
 		this.shininessLoc     = gl.getUniformLocation(this.prog, "uShininess");
 
+		// Emission Map
+		this.useEmissiveLoc     = gl.getUniformLocation(this.prog, "uUseEmissive");
+		this.textureLoc = gl.getUniformLocation(this.prog, "uTexture");
+		this.emissiveTextureLoc = gl.getUniformLocation(this.prog, "uEmissiveTexture");
+
 		// then re-bind your existing vertex data:
 		if (this._lastVertPos && this._lastTexCoords) {
 			this.setMesh(this._lastVertPos, this._lastTexCoords);
@@ -272,10 +285,15 @@ export class MeshComponent extends Component
 		bindAttrib(this.normalLoc, this.normalBuffer, 3);
 		bindAttrib(this.texCoordLoc, this.texCoordBuffer, 2);
 
-
-		// Bind texture
+		// Bind diffuse
+		gl.uniform1i(this.textureLoc, 0);
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, this.texture);
+
+		// Bind emissive
+		gl.uniform1i(this.emissiveTextureLoc, 1);
+		gl.activeTexture(gl.TEXTURE1);
+		gl.bindTexture(gl.TEXTURE_2D, this.emissiveTexture);
 	
 		// Draw call
 		gl.drawArrays(gl.TRIANGLES, 0, this.numTriangles);
@@ -317,6 +335,31 @@ export class MeshComponent extends Component
 		gl.uniform1i(this.useTextureLoc, 1);													// Enable texture visualization inside shader
 	}
 	
+	// Method to set emissive texture (similar to setTexture)
+	setEmissiveTexture(img, flipUV = false) 
+	{
+		const gl = this.gl;
+
+		gl.useProgram(this.prog);
+		gl.bindTexture(gl.TEXTURE_2D, this.emissiveTexture);
+
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipUV);
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
+		gl.generateMipmap(gl.TEXTURE_2D);
+
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+
+		// Enable emissive mapping
+		gl.uniform1i(this.useEmissiveLoc, 1);
+	}
 	
 	// This method is called when the user changes the state of the
 	// "Show Texture" checkbox. 
@@ -327,6 +370,15 @@ export class MeshComponent extends Component
 
 		gl.useProgram(this.prog);
 		gl.uniform1i(this.useTextureLoc, show ? 1 : 0); 										// Enable/disable inside the shader
+	}
+
+	// Method to toggle emissive mapping on/off
+	showEmissive(show) 
+	{
+		const gl = this.gl;
+
+		gl.useProgram(this.prog);
+		gl.uniform1i(this.useEmissiveLoc, show ? 1 : 0);
 	}
 
 	// This method is called to set the incoming light direction
@@ -354,6 +406,10 @@ export class MeshComponent extends Component
 		console.log("uM   loc =", gl.getUniformLocation(this.prog,"uModelMatrix"));		
 	}
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Default shaders with normal rendering (for testing and checks purposes)
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Vertex Shader
 const meshVS = `

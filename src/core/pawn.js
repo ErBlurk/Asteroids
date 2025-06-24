@@ -1,9 +1,11 @@
 import { Actor } from "./actor.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
 import { Matrix4 } from "../utils/Math/Matrix4.js";
+import { RayCast } from "./collision/raycast.js";
 
 var MIN_Y_ROT = -80.0;
 var MAX_Y_ROT = 80.0;
+const MAX_RAY_DISTANCE = 4096;
 
 export class Pawn extends Actor
 {
@@ -38,8 +40,21 @@ export class Pawn extends Actor
         this.cameraSpringStiffness = 500;              // "spring" constant
         this.cameraSpringDamping = 50;               // damping coefficient
 
-        this.InitController();
+        // laser state
+        this.rayCaster        = new RayCast(world);
+        this._laserActive     = false;
+        this._laserStartTime  = 0;
+        this._laserDuration   = 1000; // ms
+        this._laserOrigin     = new Vector3();
+        this._laserEnd        = new Vector3();
 
+        // Input state
+        this.leftDown = false;
+        this.rightDown = false;
+        this.lastMouseEvent = null;
+
+        // Initializers
+        this.InitController();
         this.InitMesh();
     }
 
@@ -53,12 +68,17 @@ export class Pawn extends Actor
 
         await this.LoadTexture("../assets/textures/spaceship_diffuse.png", true);
 
-        await this.LoadEmissionMap("../assets/textures/spaceship_emissive.png", true);
+        await this.LoadEmissiveTexture("../assets/textures/spaceship_emissive.png", true);
     }
 
     Tick(deltaTime)
     {
         this.HandleInput(deltaTime);
+
+        if(this.leftDown || this.rightDown)
+        {
+            this.onMouseDown(this.lastMouseEvent);
+        }
     }
 
     AddMovementInput(dir, dt)
@@ -84,6 +104,11 @@ export class Pawn extends Actor
 
         // Move pawn
         this.transform.position.addInPlace(this.velocity.clone().multiplyScalar(dt));
+
+        // Set velocity for nice shader effects
+        this.gl.useProgram(this.mesh.prog);
+        const velocityLoc = this.gl.getUniformLocation(this.mesh.prog, "uVelocity");
+        this.gl.uniform1f(velocityLoc, this.velocity.length() / this.maxSpeed);
     }
 
     /**
@@ -282,6 +307,35 @@ export class Pawn extends Actor
                 document.removeEventListener('mousemove', this._onMouseMove, false);
             }
         });
+
+        // Mouse click
+        document.addEventListener("mousedown", (e) =>
+        {
+            this.lastMouseEvent = e;
+
+            if (e.button === 0)
+            {
+                this.leftDown = true;
+            }
+            else if (e.button === 2)
+            {
+                this.rightDown = true;
+            }
+        });
+
+        document.addEventListener("mouseup", (e) =>
+        {
+            this.lastMouseEvent = e;
+
+            if (e.button === 0)
+            {
+                this.leftDown = false;
+            }
+            else if (e.button === 2)
+            {
+                this.rightDown = false;
+            }
+        });
     }
 
     onCollision(actor)
@@ -289,4 +343,56 @@ export class Pawn extends Actor
         actor.Destroy();
         //console.log("Collided");
     }
+
+    // Raycasting managing
+    onMouseDown(event)
+    {
+        if (!this.leftDown) return;
+
+        // origin
+        const origin = this.transform.position.clone();
+
+        // forward from renderer.rotation
+        const { yaw, pitch } = this.world.renderer.rotation;
+        const forward = new Vector3(
+             Math.sin(yaw) * Math.cos(pitch),
+            -Math.sin(pitch),
+             Math.cos(yaw) * Math.cos(pitch)
+        ).normalize();
+
+        // end point
+        const end = origin.clone().addInPlace(forward.multiplyScalar(MAX_RAY_DISTANCE));
+
+        // do the cast to get hit info
+        const hit = this.rayCaster.raycast(origin, end, this);
+
+        // console.log("Hit actor:", hit ? hit.actor : null);
+
+        // hand it off to the world
+        this.world.DrawLaser(origin, hit ? hit.point : end, 0.01);
+
+        if (hit)
+        {
+            if(hit.actor)
+            {
+                if(this.rightDown)
+                {
+                    // Stop pulling and add impulse
+                    this.leftDown = false;
+                    this.rightDown = false;
+                    if(hit.actor.ApplyImpulse)
+                    {
+                        hit.actor.ApplyImpulse(forward, 100);
+                    }
+                }
+                else if(hit.actor.SetPullTarget)
+                {
+                    // Pull the asteroid - Tractor Beam!
+                    const pullPoint = this.transform.position.clone().add(forward.clone().multiplyScalar(10));
+                    hit.actor.SetPullTarget(pullPoint);
+                }
+            }
+        }
+    }
+
 }

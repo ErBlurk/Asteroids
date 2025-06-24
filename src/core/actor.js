@@ -182,12 +182,13 @@ export class Actor extends GameObject
         this.mesh.setTexture(img, flipUV);
     }
 
-    async LoadEmissionMap(path, flipUV = false)
+    async LoadEmissiveTexture(path, flipUV = false)
     {
         const img = await this.LoadImage(path);
         if (!img) return;
 
-        //this.mesh.setEmissionMap(img, flipUV);
+        
+        this.mesh.setEmissiveTexture(img, flipUV);
     }
 
 

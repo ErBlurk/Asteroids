@@ -10,6 +10,7 @@ import { Vector3 } from "../utils/Math/Vector3.js";
 import { DirectionalLight } from "./directional_light.js";
 import { SpatialGrid } from "./collision/spatial_grid.js";
 import { SmokeSystem } from "./particles/smoke_system.js";
+import { DebugLine } from "./debug/debug_line.js";
 
 export class World
 {
@@ -18,12 +19,18 @@ export class World
         this.renderer = new Renderer();
         this.gl = this.renderer.gl;
 
+        // World actors
         this.actors = [];
         this.tickingActors = [];
         this.visibleActors = [];
 
+        // Particle systems
         this.particleSystems = [];
 
+        // Debuggging 
+        this.debugLines = [];
+
+        // Simple directional light manager
         this.directionalLight = new DirectionalLight(new Vector3(0.5, 1, -1));
 
         // Collision system
@@ -89,6 +96,7 @@ export class World
     ////////////////////////////////////////////////////////////////////////////////////////////////////
     // Scene Managment
     ////////////////////////////////////////////////////////////////////////////////////////////////////
+
     SpawnAsteroids()
     {
         for (let i = 0; i < 128; i++)
@@ -400,10 +408,12 @@ export class World
             this.renderer.skybox.draw();
         }
 
+        // Then actors
         for (let actor of this.visibleActors)
         {
             if (actor.bHidden) continue;
 
+            // Get actor mesh program - assumption, one mesh per actor
             const mesh = actor.mesh;
             gl.useProgram(mesh.prog);
 
@@ -415,12 +425,37 @@ export class World
             actor.DrawComponents(viewMatrix, projectionMatrix);
         }
 
+        // And particle systems
         for (let system of this.particleSystems)
         {
             if (!system) continue;
 
             system.ParticlesDraw(viewMatrix, projectionMatrix);
         }
+
+        // And also debug lines
+        // draw all active debug lines:
+        for (let i = this.debugLines.length - 1; i >= 0; i--)
+        {
+            const line = this.debugLines[i];
+            if (line.HasEnded())
+            {
+                this.debugLines.splice(i, 1);
+            } else
+            {
+                line.draw();
+            }
+        }
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Debug Lines / Lasers
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    DrawLaser(origin, end, duration = 1.0)
+    {
+        let color = [1, 0, 0, 1];
+        let debug = new DebugLine(this, origin, end, color, duration * 1000);
+        this.debugLines.push(debug);
+    }
 }

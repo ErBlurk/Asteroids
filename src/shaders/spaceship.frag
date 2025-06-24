@@ -1,10 +1,15 @@
 precision mediump float;
 
-uniform bool      uUseTexture;
-uniform sampler2D uTexture;
+uniform bool uUseTexture;
+uniform bool uUseEmissive;
 
-uniform vec3      uLightDirection;
-uniform float     uShininess;
+uniform sampler2D uTexture;
+uniform sampler2D uEmissiveTexture;
+
+uniform vec3 uLightDirection;
+uniform float uShininess;
+
+uniform float uVelocity;
 
 varying vec3 vNormal;
 varying vec2 vTexCoord;
@@ -39,5 +44,14 @@ void main() {
     vec3  specular     = specStrength * spec * baseColor;
 
     vec3 finalColor = lightingNoSpec + specular;
-    gl_FragColor    = vec4(finalColor, 1.0);
+
+    // Add emissive contribution if enabled
+    if (uUseEmissive) {
+        vec3 emissive = texture2D(uEmissiveTexture, vTexCoord).rgb;
+        if (length(emissive) > 0.0) {
+            finalColor = emissive * uVelocity; 
+        }
+    }
+
+    gl_FragColor = vec4(finalColor, 1.0);
 }
