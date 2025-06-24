@@ -355,7 +355,7 @@ export class MeshComponent extends Component
 	}
 }
 
-// Vertex Shader (unchanged)
+// Vertex Shader
 const meshVS = `
 precision mediump float;
 attribute vec3 aPosition;
@@ -377,7 +377,7 @@ void main() {
 }
 `;
 
-// Fragment Shader (with added ambient term)
+// Fragment Shader
 const meshFS = `
 precision mediump float;
 uniform bool uUseTexture;

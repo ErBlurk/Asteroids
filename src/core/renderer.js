@@ -8,7 +8,8 @@ import { SkyBox } from "./skybox.js";
 
 const MAX_RENDER_DISTANCE = 1024;
 
-export class Renderer {
+export class Renderer
+{
     constructor()
     {
         this.position = new Vector3();
@@ -28,14 +29,16 @@ export class Renderer {
     }
 
     // Called once to initialize
-    InitWebGL() {
+    InitWebGL()
+    {
         // Initialize the WebGL canvas
         this.canvas = document.getElementById("canvas");
         this.hudCanvas = document.getElementById("hud");
-        this.hudCtx    = this.hudCanvas.getContext("2d");
+        this.hudCtx = this.hudCanvas.getContext("2d");
         this.canvas.oncontextmenu = function () { return false; };
         this.gl = this.canvas.getContext("webgl", { antialias: false, depth: true });	// Initialize the GL context
-        if (!this.gl) {
+        if (!this.gl)
+        {
             alert("Unable to initialize WebGL. Your browser or machine may not support it.");
             return;
         }
@@ -52,7 +55,8 @@ export class Renderer {
     }
 
     // In renderer.js
-    UpdateCanvasSize() {
+    UpdateCanvasSize()
+    {
         const dpr = window.devicePixelRatio || 1;
 
         // Get the actual viewport size
@@ -83,7 +87,8 @@ export class Renderer {
         this.UpdateProjectionMatrix();
     }
 
-    UpdateProjectionMatrix() {        
+    UpdateProjectionMatrix()
+    {
         var r = this.canvas.width / this.canvas.height;
         this.near = (this.position.z - MAX_RENDER_DISTANCE);
         const min_n = 0.001;
@@ -91,7 +96,7 @@ export class Renderer {
         this.far = (this.position.z + MAX_RENDER_DISTANCE);;
         var fov = Math.PI * 60 / 180;
         this.perspectiveMatrix = Matrix4.GetPerspective(fov, r, this.near, this.far).elements;
-        
+
         // var s = 1 / Math.tan(fov / 2);
         // this.perspectiveMatrix = [
         //     s / r, 0, 0, 0,
@@ -108,46 +113,50 @@ export class Renderer {
     }
 
     // This is the correct method to get the camera's combined View-Projection matrix
-    GetViewProjectionMatrix() {
+    GetViewProjectionMatrix()
+    {
         const viewMatrix = Matrix4.GetViewMatrix(this.position.x, this.position.y, this.position.z, this.rotation.pitch, this.rotation.yaw);
-        
+
         const projection = new Matrix4(this.perspectiveMatrix);
         const viewProjectionResult = projection.multiply(viewMatrix);
 
         return viewProjectionResult.elements; // Return the underlying Float32Array for gl.uniformMatrix4fv
     }
 
-    GetViewMatrix() {
+    GetViewMatrix()
+    {
         const viewMatrix = Matrix4.GetViewMatrix(this.position.x, this.position.y, this.position.z, this.rotation.pitch, this.rotation.yaw);
         return viewMatrix.elements;
     }
 
-    GetProjectionMatrix() {
+    GetProjectionMatrix()
+    {
         const projectionMatrix = new Matrix4(this.perspectiveMatrix);
         return projectionMatrix.elements;
     }
 
-    DrawSkybox() {
+    DrawSkybox()
+    {
         const gl = this.gl;
         const prog = this.skyboxProgram;
         gl.useProgram(prog);
-    
+
         // Disable depth writes but keep testing
         gl.depthMask(false);
-    
+
         // Compute inverse of viewProjection
         const invVP = Matrix4
             .Inverse(new Matrix4(this.GetViewProjectionMatrix()))
             .elements;
         gl.uniformMatrix4fv(this.skyboxMatrixLoc, false, invVP);
-    
+
         // Render cube
         gl.bindBuffer(gl.ARRAY_BUFFER, this.skyboxBuffer);
         gl.enableVertexAttribArray(this.skyboxAttribLoc);
         gl.vertexAttribPointer(this.skyboxAttribLoc, 3, gl.FLOAT, false, 0, 0);
-    
+
         gl.drawArrays(gl.TRIANGLES, 0, 36); // assuming 12 triangles
-    
+
         gl.depthMask(true);
     }
 
@@ -155,7 +164,8 @@ export class Renderer {
     // HUD handling
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    drawHUD() {
+    drawHUD()
+    {
         const hud = this.hudCanvas;
         const ctx = this.hudCtx;
 
@@ -179,7 +189,8 @@ export class Renderer {
         ctx.lineWidth = 1;
 
         ctx.beginPath();
-        for (let p of pts) {
+        for (let p of pts)
+        {
             const dx = cx - p.x;
             const dy = cy - p.y;
             const len = Math.hypot(dx, dy);
@@ -192,7 +203,8 @@ export class Renderer {
         ctx.stroke();
 
         ctx.fillStyle = "#FFF";
-        for (let p of pts) {
+        for (let p of pts)
+        {
             ctx.beginPath();
             ctx.arc(Math.round(p.x), Math.round(p.y), 2, 0, Math.PI * 2);
             ctx.fill();

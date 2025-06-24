@@ -5,10 +5,13 @@ import { Matrix4 } from "../../utils/Math/Matrix4.js";
 const bDebug = false;
 
 // Helper: builds unit‐sphere wireframe (3 great circles)
-function makeUnitWireSphere(segments = 24) {
+function makeUnitWireSphere(segments = 24)
+{
     const pts = [];
-    for (let ring = 0; ring < 3; ring++) {
-        for (let i = 0; i < segments; i++) {
+    for (let ring = 0; ring < 3; ring++)
+    {
+        for (let i = 0; i < segments; i++)
+        {
             const theta = (i / segments) * 2 * Math.PI;
             let x = 0, y = 0, z = 0;
             if (ring === 0) { x = Math.cos(theta); y = Math.sin(theta); }
@@ -20,24 +23,29 @@ function makeUnitWireSphere(segments = 24) {
     return new Float32Array(pts);
 }
 
-export class ConvexCollisionComponent extends Component {
-    constructor(meshComp) {
+export class ConvexCollisionComponent extends Component
+{
+    constructor(meshComp)
+    {
         super(meshComp.gl);
 
         this._buildFromMesh(meshComp);
     }
 
-    _buildFromMesh(meshComp) {
+    _buildFromMesh(meshComp)
+    {
         this.mesh = meshComp;
         const pos = meshComp._lastVertPos;
-        if (!pos || pos.length < 3) {
+        if (!pos || pos.length < 3)
+        {
             throw new Error("MeshComponent must have raw positions in _lastVertPos");
         }
 
         // Compute AABB extremes
         let minX = Infinity, minY = Infinity, minZ = Infinity;
         let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
-        for (let i = 0; i < pos.length; i += 3) {
+        for (let i = 0; i < pos.length; i += 3)
+        {
             const [x, y, z] = [pos[i], pos[i + 1], pos[i + 2]];
             if (x < minX) minX = x;
             if (y < minY) minY = y;
@@ -55,7 +63,8 @@ export class ConvexCollisionComponent extends Component {
 
         // Radius = max distance to center
         let r = 0;
-        for (let i = 0; i < pos.length; i += 3) {
+        for (let i = 0; i < pos.length; i += 3)
+        {
             const dx = pos[i] - cx;
             const dy = pos[i + 1] - cy;
             const dz = pos[i + 2] - cz;
@@ -80,7 +89,8 @@ export class ConvexCollisionComponent extends Component {
         this.uMVPLoc = this.gl.getUniformLocation(this.prog, 'uMVP');
     }
 
-    draw(view, projection) {
+    draw(view, projection)
+    {
         if (bDebug)
         {
             let view_projection = this.BuildViewProjectionMatrix(view, projection);
@@ -88,7 +98,8 @@ export class ConvexCollisionComponent extends Component {
         }
     }
 
-    drawDebug(vpMatrix) {
+    drawDebug(vpMatrix)
+    {
         const gl = this.gl;
         gl.useProgram(this.prog);
 
@@ -109,10 +120,13 @@ export class ConvexCollisionComponent extends Component {
 
         // mvp = vpMatrix * model
         const mvp = new Float32Array(16);
-        for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
+        for (let r = 0; r < 4; r++)
+        {
+            for (let c = 0; c < 4; c++)
+            {
                 let sum = 0;
-                for (let k = 0; k < 4; k++) {
+                for (let k = 0; k < 4; k++)
+                {
                     sum += vpMatrix[k * 4 + r] * model[c * 4 + k];
                 }
                 mvp[c * 4 + r] = sum;

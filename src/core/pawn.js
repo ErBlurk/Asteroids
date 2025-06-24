@@ -5,8 +5,10 @@ import { Matrix4 } from "../utils/Math/Matrix4.js";
 var MIN_Y_ROT = -80.0;
 var MAX_Y_ROT = 80.0;
 
-export class Pawn extends Actor {
-    constructor(gl, world, transform) {
+export class Pawn extends Actor
+{
+    constructor(gl, world, transform)
+    {
         super(gl, world, transform);
 
         // Convert degrees to radians
@@ -34,7 +36,7 @@ export class Pawn extends Actor {
         // Spring-damper parameters for the camera
         this.cameraSpringVelocity = Vector3.zero();    // current camera velocity
         this.cameraSpringStiffness = 500;              // "spring" constant
-        this.cameraSpringDamping   = 50;               // damping coefficient
+        this.cameraSpringDamping = 50;               // damping coefficient
 
         this.InitController();
 
@@ -48,17 +50,19 @@ export class Pawn extends Actor {
         const VertShader = './src/shaders/spaceship.vert';
         const FragShader = './src/shaders/spaceship.frag';
         await this.InitShaders(VertShader, FragShader);
-        
+
         await this.LoadTexture("../assets/textures/spaceship_diffuse.png", true);
 
         await this.LoadEmissionMap("../assets/textures/spaceship_emissive.png", true);
     }
 
-    Tick(deltaTime) {
+    Tick(deltaTime)
+    {
         this.HandleInput(deltaTime);
     }
 
-    AddMovementInput(dir, dt) {
+    AddMovementInput(dir, dt)
+    {
         // Desired accel vector
         const accel = dir.clone().multiplyScalar(this.acceleration);
 
@@ -66,13 +70,15 @@ export class Pawn extends Actor {
         this.velocity.addInPlace(accel.multiplyScalar(dt));
 
         // Apply friction when no input
-        if (dir.lengthSq() === 0) {
+        if (dir.lengthSq() === 0)
+        {
             const drag = Math.exp(-this.friction * dt);
             this.velocity.multiplyScalarInPlace(drag);
         }
 
         // Clamp to max speed
-        if (this.velocity.length() > this.maxSpeed) {
+        if (this.velocity.length() > this.maxSpeed)
+        {
             this.velocity.normalize().multiplyScalarInPlace(this.maxSpeed);
         }
 
@@ -85,7 +91,8 @@ export class Pawn extends Actor {
      * (only yaw-rotated, with a fixed vertical offset) and
      * make it look in the pawn’s facing direction.
      */
-    CameraLook() {
+    CameraLook()
+    {
         const camPos = this.world.renderer.position;
         camPos.x += (this.transform.position.x - camPos.x) * this.cameraLerp;
         camPos.y += (this.transform.position.y - camPos.y) * this.cameraLerp;
@@ -99,23 +106,27 @@ export class Pawn extends Actor {
      * Update camera position.  
      * Keep camera yaw/pitch locked to pawn’s rotation.
      */
-    CameraOrbit(direction, dt, useSpring = false) {
+    CameraOrbit(direction, dt, useSpring = false)
+    {
         const pawnPos = this.transform.position;
-        const pitch   = this.transform.rotation.pitch;
-        const yaw     = this.transform.rotation.yaw;
-    
+        const pitch = this.transform.rotation.pitch;
+        const yaw = this.transform.rotation.yaw;
+
         // Compute horizontal forward: from input or pawn yaw
         let forward;
-        if (direction.lengthSq() > 1e-4) {
+        if (direction.lengthSq() > 1e-4)
+        {
             forward = direction.clone().normalize();
-        } else {
+        } 
+        else
+        {
             forward = new Vector3(Math.sin(yaw), 0, Math.cos(yaw));
         }
-    
+
         // World up and right vectors
-        const up    = new Vector3(0, 1, 0);
+        const up = new Vector3(0, 1, 0);
         const right = up.clone().cross(forward).normalize();
-    
+
         // Tilt forward by pitch around right axis in the forward–up plane
         const cosP = Math.cos(pitch);
         const sinP = -Math.sin(pitch);
@@ -123,53 +134,57 @@ export class Pawn extends Actor {
         let pitchedForward = forward.clone().multiplyScalar(cosP);
         pitchedForward.add(up.clone().multiplyScalar(sinP));
         pitchedForward.normalize();
-    
+
         // Desired camera position = pawnPos + right*X + up*Y + pitchedForward*Z
         let desired = pawnPos.clone()
         desired.addInPlace(right.multiplyScalar(this.cameraOffset.x));
         desired.addInPlace(up.multiplyScalar(this.cameraOffset.y));
         desired.addInPlace(pitchedForward.multiplyScalar(this.cameraOffset.z));
-    
+
         // Fetch current camera position
         const camPos = this.world.renderer.position;
-    
-        if (!useSpring) {
+
+        if (!useSpring)
+        {
             // Instant snap (no lag)
             camPos.set(desired.x, desired.y, desired.z);
-        } else {
+        } 
+        else
+        {
             // Spring-damper: F = k·x − c·v
-            const disp     = desired.clone().subtract(camPos);
-            const springF  = disp.multiplyScalar(this.cameraSpringStiffness);
+            const disp = desired.clone().subtract(camPos);
+            const springF = disp.multiplyScalar(this.cameraSpringStiffness);
             const dampingF = this.cameraSpringVelocity.clone().multiplyScalar(this.cameraSpringDamping);
-            const accel    = springF.subtract(dampingF);
-    
+            const accel = springF.subtract(dampingF);
+
             // integrate velocity & update
             this.cameraSpringVelocity.addInPlace(accel.multiplyScalar(dt));
             camPos.addInPlace(this.cameraSpringVelocity.clone().multiplyScalar(dt));
         }
-    
+
         // Write back camera position
         this.world.renderer.position.set(camPos.x, camPos.y, camPos.z);
-    
+
         // Rebuild view matrix so the camera looks at the pawn
-        const eye    = [ camPos.x, camPos.y, camPos.z ];
-        const center = [ pawnPos.x, pawnPos.y, pawnPos.z ];
-        this.world.renderer.viewMatrix = Matrix4.lookAt(eye, center, [0,1,0]);
+        const eye = [camPos.x, camPos.y, camPos.z];
+        const center = [pawnPos.x, pawnPos.y, pawnPos.z];
+        this.world.renderer.viewMatrix = Matrix4.lookAt(eye, center, [0, 1, 0]);
     }
 
-    HandleInput(dt) {
+    HandleInput(dt)
+    {
         const world = this.world;
         const yaw = world.renderer.rotation.yaw;
         const pitch = -world.renderer.rotation.pitch;
 
         // Build a unit “input direction” from WASD/QE:
         let input = new Vector3(0, 0, 0);
-        if (this.keysPressed['w']) input.z +=  1;   // Forward
+        if (this.keysPressed['w']) input.z += 1;   // Forward
         if (this.keysPressed['s']) input.z += -1;   // Backward
         if (this.keysPressed['a']) input.x += -1;   // Left
-        if (this.keysPressed['d']) input.x +=  1;   // Right
+        if (this.keysPressed['d']) input.x += 1;   // Right
         if (this.keysPressed['q']) input.y += -1;   // Down
-        if (this.keysPressed['e']) input.y +=  1;   // Up
+        if (this.keysPressed['e']) input.y += 1;   // Up
         if (input.lengthSq() > 0) input.normalize();
 
         const cosYaw = Math.cos(yaw);
@@ -194,7 +209,7 @@ export class Pawn extends Actor {
 
         // Apply acceleration, friction, clamp & move pawn
         this.AddMovementInput(direction, dt);
-        
+
         // Orbit around actor camera
         direction = new Vector3().addInPlace(forward.clone());
         this.CameraOrbit(direction, dt, true);
@@ -205,7 +220,8 @@ export class Pawn extends Actor {
         if (document.getElementById("posZ")) document.getElementById("posZ").innerHTML = this.transform.position.z.toFixed(2);
     }
 
-    _onMouseMove = (event) => {
+    _onMouseMove = (event) =>
+    {
         const canvas = this.world.renderer.canvas;
         const clamp = (v, min, max) => v < min ? min : v > max ? max : v;
         const speed = 0.002;  // tweak sensitivity
@@ -222,38 +238,47 @@ export class Pawn extends Actor {
         if (document.getElementById("rotY")) document.getElementById("rotY").innerHTML = (this.world.renderer.rotation.pitch * 180 / Math.PI).toFixed(2);
     }
 
-    InitController() {
+    InitController()
+    {
         const canvas = this.world.renderer.canvas;
 
-        const clamp = (value, min, max) => {
+        const clamp = (value, min, max) =>
+        {
             if (value < min) return min;
             if (value > max) return max;
             return value;
         }
 
-        document.addEventListener('keydown', (event) => {
+        document.addEventListener('keydown', (event) =>
+        {
             const key = event.key.toLowerCase();
-            if (['w', 'a', 's', 'd', 'q', 'e', ' '].includes(key)) {
+            if (['w', 'a', 's', 'd', 'q', 'e', ' '].includes(key))
+            {
                 event.preventDefault(); // Prevent default browser actions
             }
             this.keysPressed[key] = true;
         });
 
-        document.addEventListener('keyup', (event) => {
+        document.addEventListener('keyup', (event) =>
+        {
             const key = event.key.toLowerCase();
             this.keysPressed[key] = false;
         });
 
         // Request lock when user clicks canvas
-        canvas.addEventListener('click', () => {
+        canvas.addEventListener('click', () =>
+        {
             canvas.requestPointerLock();
         });
 
         // When lock state changes, bind or unbind our pan handler
-        document.addEventListener('pointerlockchange', () => {
-            if (document.pointerLockElement === canvas) {
+        document.addEventListener('pointerlockchange', () =>
+        {
+            if (document.pointerLockElement === canvas)
+            {
                 document.addEventListener('mousemove', this._onMouseMove, false);
-            } else {
+            } else
+            {
                 document.removeEventListener('mousemove', this._onMouseMove, false);
             }
         });

@@ -1,30 +1,35 @@
-import { ObjMesh } from "../utils/filetypes/obj.js";
+import { ObjMesh } from "../utils/FileType/obj.js";
 import { MeshComponent } from "./components/mesh_component.js";
 import { GameObject } from "./gameobject.js";
 import { Transform } from "../utils/Math/Transform.js";
 import { ConvexCollisionComponent } from "./components/convex_collision_component.js";
+import { Vector3 } from "../utils/Math/Vector3.js";
 
-
-export class Actor extends GameObject {
-    constructor(gl, world, transform) {
+export class Actor extends GameObject
+{
+    constructor(gl, world, transform)
+    {
         super();
 
         this.gl = gl;
         this.world = world;
-    
+
         this.bTickEnable = true;
         this.bHidden = false;
         this.bDirty = false;
         this.bPendingDestroy = false;
 
-        if (transform instanceof Transform) {
+        if (transform instanceof Transform)
+        {
             this.transform = transform;
-        } else {
+        } else
+        {
             this.transform = new Transform();
         }
 
         this.mesh = new MeshComponent(gl);
         this.collision = null;
+        this.lastCollisionDirection = new Vector3();
 
         this.components = [];
         this.components.push(this.mesh);
@@ -38,8 +43,6 @@ export class Actor extends GameObject {
     Tick(deltaTime)
     {
         // Leave blank
-
-        // this.transform.position.addInPlace(new Vector3(0.01, 0, 0));
     }
 
     async InitShaders(Vertex, Fragment) 
@@ -51,23 +54,30 @@ export class Actor extends GameObject {
         this.mesh.setProgram(VS, FS);
     }
 
-    ShowTexture(param) {
+    ShowTexture(param)
+    {
         this.mesh.showTexture(param.checked);
     }
 
-    SwapYZ(param) {
+    SwapYZ(param)
+    {
         this.mesh.swapYZ(param.checked);
     }
 
-    LoadObj(param) {
-        return new Promise((resolve, reject) => {
-            if (typeof param === "string") {
+    LoadObj(param)
+    {
+        return new Promise((resolve, reject) =>
+        {
+            if (typeof param === "string")
+            {
                 // param is a URL
                 const objMesh = new ObjMesh();
                 const xhr = new XMLHttpRequest();
 
-                xhr.onreadystatechange = () => {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
+                xhr.onreadystatechange = () =>
+                {
+                    if (xhr.readyState === 4 && xhr.status === 200)
+                    {
                         objMesh.parse(xhr.responseText);
                         this.processLoadedMesh(objMesh);
                     }
@@ -75,26 +85,30 @@ export class Actor extends GameObject {
 
                 xhr.open("GET", param, true);
                 xhr.send();
-            } else if (param.files && param.files[0]) {
+            } else if (param.files && param.files[0])
+            {
                 // param is a file input element
                 const reader = new FileReader();
 
-                reader.onload = (e) => {
+                reader.onload = (e) =>
+                {
                     const objMesh = new ObjMesh();
                     objMesh.parse(e.target.result);
                     this.processLoadedMesh(objMesh);
                 };
 
                 reader.readAsText(param.files[0]);
-            } else {
+            } else
+            {
                 console.warn("LoadObj: invalid parameter", param);
             }
 
             resolve();
         });
     }
-    
-    processLoadedMesh(objMesh) {
+
+    processLoadedMesh(objMesh)
+    {
         const box = objMesh.getBoundingBox();
         const shift = [
             -(box.min[0] + box.max[0]) / 2,
@@ -124,17 +138,20 @@ export class Actor extends GameObject {
         this.components.push(this.collision);
     }
 
-    async LoadImage(path) {
+    async LoadImage(path)
+    {
         if (!path) return null;
 
-        try {
+        try
+        {
             // fetch the raw image file
             const res = await fetch(path);
             if (!res.ok) throw new Error(`Failed to load ${path}: ${res.status}`);
             const blob = await res.blob();
 
             // blob -> dataURL
-            const dataURL = await new Promise((resolve, reject) => {
+            const dataURL = await new Promise((resolve, reject) =>
+            {
                 const fr = new FileReader();
                 fr.onerror = () => reject(fr.error);
                 fr.onload = () => resolve(fr.result);
@@ -142,44 +159,50 @@ export class Actor extends GameObject {
             });
 
             // decode that Data-URL in an <img>, and *return* it
-            return await new Promise((resolve, reject) => {
+            return await new Promise((resolve, reject) =>
+            {
                 const img = new Image();
                 img.onload = () => resolve(img);
                 img.onerror = (e) => reject(new Error("Image decode failed: " + e.message));
                 img.src = dataURL;
             });
 
-        } catch (err) {
+        } catch (err)
+        {
             console.error("LoadImage error:", err);
             return null;
         }
     }
 
-    async LoadTexture(path, flipUV = false) {
+    async LoadTexture(path, flipUV = false)
+    {
         const img = await this.LoadImage(path);
         if (!img) return;
 
         this.mesh.setTexture(img, flipUV);
     }
 
-    async LoadEmissionMap(path, flipUV = false) {
+    async LoadEmissionMap(path, flipUV = false)
+    {
         const img = await this.LoadImage(path);
         if (!img) return;
-        
+
         //this.mesh.setEmissionMap(img, flipUV);
     }
 
 
     DrawComponents(viewMatrix, projectionMatrix)
     {
-        for (let component of this.components) {
-            if(component)
+        for (let component of this.components)
+        {
+            if (component)
             {
-                if (component instanceof MeshComponent || component instanceof ConvexCollisionComponent)  { //  || component instanceof BoxComponent) {
+                if (component instanceof MeshComponent || component instanceof ConvexCollisionComponent)
+                { //  || component instanceof BoxComponent) {
                     component.setPosition(this.transform.position);
                     component.setRotation(this.transform.rotation);
                 }
-                component.draw( viewMatrix, projectionMatrix );
+                component.draw(viewMatrix, projectionMatrix);
             }
         }
     }
@@ -191,7 +214,17 @@ export class Actor extends GameObject {
 
     onCollision(actor)
     {
-        //this.Destroy();
-        //console.log("Collided");
+        if (actor)
+        {
+            const dir = actor.transform.position.clone().subtractInPlace(this.transform.position).normalize();
+            this.lastCollisionDirection = dir.multiplyScalar(-1);
+        }
+
+        // TODO
+    }
+
+    onDestroy()
+    {
+        // TODO
     }
 }

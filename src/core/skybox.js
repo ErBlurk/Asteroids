@@ -1,15 +1,17 @@
 import { Matrix4 } from "../utils/Math/Matrix4.js";
-import { Rotator } from "../utils/Math/Rotator.js";
 
-export class SkyBox {
-    constructor(gl, renderer) {
+export class SkyBox
+{
+    constructor(gl, renderer)
+    {
         this.gl = gl;
         this.renderer = renderer;
         this.initShader();
         this.initCube();
     }
 
-    initShader() {
+    initShader()
+    {
         const gl = this.gl;
 
         const vsSource = `
@@ -94,7 +96,8 @@ export class SkyBox {
         this.vertexCount = vertices.length / 3;
     }
 
-    draw() {
+    draw()
+    {
         const gl = this.gl;
         const pitch = this.renderer.rotation.pitch;
         const yaw = this.renderer.rotation.yaw;
