@@ -17,6 +17,9 @@ export class Renderer {
         this.gl = null;
         this.canvas = null;
 
+        this.near = 0;
+        this.far = 0;
+
         this.perspectiveMatrix = null;
 
         this.skybox = null;
@@ -82,12 +85,12 @@ export class Renderer {
 
     UpdateProjectionMatrix() {        
         var r = this.canvas.width / this.canvas.height;
-        var n = (this.position.z - MAX_RENDER_DISTANCE);
+        this.near = (this.position.z - MAX_RENDER_DISTANCE);
         const min_n = 0.001;
-        if (n < min_n) n = min_n;
-        var f = (this.position.z + MAX_RENDER_DISTANCE);;
+        if (this.near < min_n) this.near = min_n;
+        this.far = (this.position.z + MAX_RENDER_DISTANCE);;
         var fov = Math.PI * 60 / 180;
-        this.perspectiveMatrix = Matrix4.GetPerspective(fov, r, n, f).elements;
+        this.perspectiveMatrix = Matrix4.GetPerspective(fov, r, this.near, this.far).elements;
         
         // var s = 1 / Math.tan(fov / 2);
         // this.perspectiveMatrix = [

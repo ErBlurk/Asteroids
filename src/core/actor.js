@@ -26,12 +26,10 @@ export class Actor extends GameObject {
         }
 
         this.mesh = new MeshComponent(gl);
-        // this.box = new BoxComponent(gl);
         this.collision = null;
 
         this.components = [];
         this.components.push(this.mesh);
-        // this.components.push(this.box);
     }
 
     OnCollisionTrigger(actor)
@@ -118,18 +116,6 @@ export class Actor extends GameObject {
         const buffers = objMesh.getVertexBuffers();
         this.mesh.setMesh(buffers.positionBuffer, buffers.texCoordBuffer, buffers.normalBuffer);
 
-        // let t = new Transform();
-        // t.setPosition(this.transform.position);
-        // t.setRotation(this.transform.rotation);
-        // 
-        // // Bounding box
-        // let x = this.mesh.boundingBox?.max[0] - this.mesh.boundingBox?.min[0];
-        // let y = this.mesh.boundingBox?.max[1] - this.mesh.boundingBox?.min[1];
-        // let z = this.mesh.boundingBox?.max[2] - this.mesh.boundingBox?.min[2];
-        // t.setScale3(x, y, z);
-        // 
-        // this.box.init(t);
-
         // once mesh is ready, create and register collision component:
         this.AddCollisionComponent();
     }
@@ -140,8 +126,8 @@ export class Actor extends GameObject {
         this.components.push(this.collision);
     }
 
-    async LoadTexture(path, flipUV = false) {
-        if (!path) return;
+    async LoadImage(path) {
+        if (!path) return null;
 
         try {
             // fetch the raw image file
@@ -157,21 +143,34 @@ export class Actor extends GameObject {
                 fr.readAsDataURL(blob);
             });
 
-            // decode that Data-URL in an <img>
-            const img = new Image(); //document.getElementById("texture-img");
-            img.onload = () => {
-                // only now do we call setTexture – passing the same HTMLImageElement type
-                this.mesh.setTexture(img, flipUV);
-                // redraw if needed
-                this.world.DrawScene();
-            };
-            img.onerror = e => console.error("Image decode failed:", e);
-            img.src = dataURL;   // kick off the decode
+            // decode that Data-URL in an <img>, and *return* it
+            return await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = (e) => reject(new Error("Image decode failed: " + e.message));
+                img.src = dataURL;
+            });
 
         } catch (err) {
-            console.error("LoadTexture error:", err);
+            console.error("LoadImage error:", err);
+            return null;
         }
     }
+
+    async LoadTexture(path, flipUV = false) {
+        const img = await this.LoadImage(path);
+        if (!img) return;
+
+        this.mesh.setTexture(img, flipUV);
+    }
+
+    async LoadEmissionMap(path, flipUV = false) {
+        const img = await this.LoadImage(path);
+        if (!img) return;
+        
+        //this.mesh.setEmissionMap(img, flipUV);
+    }
+
 
     DrawComponents(viewMatrix, projectionMatrix)
     {

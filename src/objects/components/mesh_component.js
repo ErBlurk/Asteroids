@@ -51,7 +51,7 @@ export class MeshComponent extends Component
 	{
 		const gl = this.gl;
 
-		gl.uniform1f(this.shininessLoc, 32.0);
+		gl.uniform1f(this.shininessLoc, 50.0);
 
 		this.setLightDir(1, 1, 0.5);
 	}
@@ -247,9 +247,6 @@ export class MeshComponent extends Component
 	{
 		const gl = this.gl;
 		gl.useProgram(this.prog);
-		//gl.disable(gl.CULL_FACE);
-		//gl.frontFace(gl.CW);
-
 
 		let viewMatrix = new Matrix4(view);
 		let projectionMatrix = new Matrix4(projection);
@@ -260,16 +257,7 @@ export class MeshComponent extends Component
 	
 		// Normal matrix
 		let modelViewMatrix = viewMatrix.multiply(this.modelMatrix);
-		let normalMatrix = new Matrix4(modelViewMatrix);
-		normalMatrix.invert();
-		normalMatrix.transpose();
-
-		let nm = normalMatrix.elements;
-		var normalTransform = [
-		  nm[0], nm[1], nm[2],   // first column: m00, m10, m20
-		  nm[4], nm[5], nm[6],   // second column: m01, m11, m21
-		  nm[8], nm[9], nm[10]   // third column: m02, m12, m22
-		];
+		const normalTransform = modelViewMatrix.getNormalMatrix();
 		gl.uniformMatrix3fv(this.normalMatrixLoc, false, normalTransform);
 
 		// helper to bail on invalid locs
@@ -371,11 +359,19 @@ export class MeshComponent extends Component
 const meshVS = `
 precision mediump float;
 attribute vec3 aPosition;
+attribute vec3 aNormal;
+
+uniform mat3 uNormalMatrix;
 uniform mat4 uModelViewProjection;
 uniform mat4 uModelMatrix;
 uniform bool uSwapYZ;
+
+varying vec3 vNormal;
+
 void main() {
 	vec3 pos = aPosition;
+	vNormal = normalize(uNormalMatrix * aNormal);
+
 	if (uSwapYZ) pos = vec3(pos.x, pos.z, pos.y);
 	gl_Position = uModelViewProjection * uModelMatrix * vec4(pos, 1.0);
 }
@@ -386,7 +382,14 @@ const meshFS = `
 precision mediump float;
 uniform bool uUseTexture;
 uniform sampler2D uTexture;
+
+varying vec3 vNormal;
+
 void main() {
-	gl_FragColor = vec4(1.0); // white
+
+    vec3 debugColor = abs(normalize(-vNormal))*0.5 + 0.5;
+    gl_FragColor = vec4(debugColor,1.0); // Normals
+
+	// gl_FragColor = vec4(1.0); // white
 }
 `;

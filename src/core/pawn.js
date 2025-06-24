@@ -21,7 +21,7 @@ export class Pawn extends Actor {
         // Third-person offset in pawn-local space:
         this.cameraOffset = new Vector3(0, 0.5, -6);
 
-        this.acceleration = 10;          // units/sec²
+        this.acceleration = 10;      // units/sec²
         this.maxSpeed = 10;          // units/sec
         this.friction = 0.5;         // higher = quicker stop
 
@@ -31,9 +31,9 @@ export class Pawn extends Actor {
         // Camera smoothing factor (0–1):
         this.cameraLerp = 0.15;
 
-        // ——— Spring-damper parameters for the camera ———
+        // Spring-damper parameters for the camera
         this.cameraSpringVelocity = Vector3.zero();    // current camera velocity
-        this.cameraSpringStiffness = 500;               // "spring" constant
+        this.cameraSpringStiffness = 500;              // "spring" constant
         this.cameraSpringDamping   = 50;               // damping coefficient
 
         this.InitController();
@@ -50,6 +50,8 @@ export class Pawn extends Actor {
         await this.InitShaders(VertShader, FragShader);
         
         await this.LoadTexture("../assets/textures/spaceship_diffuse.png", true);
+
+        await this.LoadEmissionMap("../assets/textures/spaceship_emissive.png", true);
     }
 
     Tick(deltaTime) {
