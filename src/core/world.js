@@ -9,8 +9,7 @@ import { Asteroid } from "../game/asteroid.js";
 import { Renderer } from "./renderer.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
 import { DirectionalLight } from "./directional_light.js";
-import { SpatialGrid } from "../objects/spatial_grid.js";
-import { Actor } from "./actor.js";
+import { SpatialGrid } from "./collision/spatial_grid.js";
 
 export class World {
     constructor() {

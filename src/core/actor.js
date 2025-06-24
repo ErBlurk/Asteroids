@@ -1,10 +1,8 @@
 import { ObjMesh } from "../utils/filetypes/obj.js";
-import { MeshComponent } from "../objects/components/mesh_component.js";
-import { GameObject } from "../objects/object.js";
+import { MeshComponent } from "./components/mesh_component.js";
+import { GameObject } from "./gameobject.js";
 import { Transform } from "../utils/Math/Transform.js";
-import { BoxComponent } from "../objects/components/box_component.js";
-import { ConvexCollisionComponent } from "../objects/components/convex_collision_component.js";
-import { Matrix4 } from "../utils/Math/Matrix4.js";
+import { ConvexCollisionComponent } from "./components/convex_collision_component.js";
 
 
 export class Actor extends GameObject {

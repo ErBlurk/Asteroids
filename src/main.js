@@ -1,7 +1,6 @@
 import { World } from "./core/world.js";
 import { Pawn } from "./core/pawn.js"
 import { Transform } from "./utils/Math/Transform.js";
-import { Actor } from "./core/actor.js";
 
 var world = null;
 

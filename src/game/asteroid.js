@@ -1,5 +1,5 @@
 import { Actor } from "../core/actor.js";
-import { ConvexCollisionComponent } from "../objects/components/convex_collision_component.js";
+import { ConvexCollisionComponent } from "../core/components/convex_collision_component.js";
 import { Transform } from "../utils/Math/Transform.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
 import { PerlinNoise } from "../utils/Noise/perlin_noise.js";
