@@ -111,9 +111,9 @@ export class World
             if (type < 0.25)
             {
                 // Fat potato
-                sx = 1.2 + Math.random() * 3;
-                sy = 1.2 + Math.random() * 3;
-                sz = 1.2 + Math.random() * 3;
+                sx = 1.2 + Math.random() * 2;
+                sy = 1.2 + Math.random() * 2;
+                sz = 1.2 + Math.random() * 2;
             } else if (type < 0.5)
             {
                 // Long noodle
@@ -135,7 +135,7 @@ export class World
             }
 
             // Apply scaling
-            t.scale.set(sx, sy, sz).multiplyScalarInPlace(1.0 + Math.random() * 5.0);
+            t.scale.set(sx, sy, sz).multiplyScalarInPlace(1.0 + Math.random() * 2.0);
 
             // Shape noise settings
             const subdivisions = 3; // + Math.floor(Math.random() * 2); // 2 or 3
