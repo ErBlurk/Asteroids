@@ -87,9 +87,22 @@ export class Pawn extends Actor
     {
         this.HandleInput(deltaTime);
 
+        this.CheckOutOfWorld();
+
         if(this.leftDown || this.rightDown)
         {
             this.onMouseDown(this.lastMouseEvent);
+        }
+    }
+
+    /*
+     * Reset position if going too far
+     */
+    CheckOutOfWorld()
+    {
+        if (this.transform.position.length() > 256)
+        {
+            this.transform.position.set(0, 0, 0);
         }
     }
 
