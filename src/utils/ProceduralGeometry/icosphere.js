@@ -1,3 +1,7 @@
+///////////////////////////////////////////////////////////////////////////////////
+// Build an icosphere - for meshes
+///////////////////////////////////////////////////////////////////////////////////
+
 import { PerlinNoise } from "../Noise/perlin_noise.js";
 import { Vector3 }      from "../Math/Vector3.js";
 import { Transform }    from "../Math/Transform.js";
@@ -16,6 +20,9 @@ export class ProceduralIcosphere
         return this._generateMeshData(vertices, faces, bApplyNoise, macroScale, macroAmp, microScale, microAmp, transform);
     }
 
+    /*
+     * Set the 0 iterations/subdivisions base vertices
+     */
     static _createInitialVertices()
     {
         const t = this.GOLDEN_RATIO;
@@ -31,6 +38,9 @@ export class ProceduralIcosphere
         return verts;
     }
 
+    /*
+     * Create the initial 0 subdivisions faces
+     */
     static _createInitialFaces()
     {
         return [
@@ -41,6 +51,10 @@ export class ProceduralIcosphere
         ];
     }
 
+    /*
+     * Subdivide the faces
+     * Compute the triangle midpoint, rebuild triangles
+     */
     static _subdivideFaces(vertices, faces, iterations)
     {
         const midCache = {};
@@ -62,6 +76,9 @@ export class ProceduralIcosphere
         return faces;
     }
 
+    /*
+     * Triangle midpoints helper
+     */
     static _getMidpoint(cache, vertices, i1, i2)
     {
         const key = i1 < i2 ? `${i1}_${i2}` : `${i2}_${i1}`;
@@ -72,7 +89,7 @@ export class ProceduralIcosphere
 
         const v1 = vertices[i1];
         const v2 = vertices[i2];
-        const mid = new Vector3((v1.x + v2.x) * 0.5, (v1.y + v2.y) * 0.5, (v1.z + v2.z) * 0.5);
+        const mid = new Vector3((v1.x + v2.x) * 0.5, (v1.y + v2.y) * 0.5, (v1.z + v2.z) * 0.5); // Alrady reprojected on the sphere
         mid.normalize();
         vertices.push(mid);
 
@@ -81,6 +98,9 @@ export class ProceduralIcosphere
         return index;
     }
 
+    /*
+     * Build the icosphere vertex data, texture mapping and normals
+     */
     static _generateMeshData(vertices, faces, bApplyNoise, macroScale, macroAmp, microScale, microAmp, transform)
     {
         const positions = [];
@@ -106,10 +126,12 @@ export class ProceduralIcosphere
                 triVerts[i] = v;
             }
 
+            // Normal computation
             const edge1 = triVerts[1].clone().subtract(triVerts[0]);
             const edge2 = triVerts[2].clone().subtract(triVerts[0]);
             const normal = edge1.cross(edge2).normalize();
 
+            // Fill output buffers
             for (const v of triVerts)
             {
                 positions.push(v.x, v.y, v.z);
@@ -124,6 +146,9 @@ export class ProceduralIcosphere
         return { positions, texCoords, normals };
     }
 
+    /*
+     * Random seed for perlin noise
+     */
     static _computeSeed(transform)
     {
         return Math.floor(
@@ -133,6 +158,9 @@ export class ProceduralIcosphere
         );
     }
 
+    /*
+     * Deform the icosphere by applying two perlin noises
+     */
     static _applyNoise(v, noise, macroScale, macroAmp, microScale, microAmp)
     {
         const f    = noise.fbm3D(v.x * macroScale, v.y * macroScale, v.z * macroScale, 3, 2, 0.5);

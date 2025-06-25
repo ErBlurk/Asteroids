@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////
-// Below is the code for the object that draws lines.
+// Simple wire box component - draws a scaled box with white lines 
 ///////////////////////////////////////////////////////////////////////////////////
 
 import { Transform } from "../../utils/Math/Transform.js"
@@ -18,6 +18,10 @@ export class BoxComponent extends Component
 		this.linebuffer = null;
 	}
 
+	/*
+	 * Default vertex positions with scaling and translation
+	 * Most of the code is WebGL initialization and setup
+	 */
 	async init(transform = new Transform())
 	{
 		this.transform = transform;
@@ -65,6 +69,7 @@ export class BoxComponent extends Component
 		this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(line), this.gl.STATIC_DRAW);
 	}
 
+	// Deprecated, should replace with a two parameters function taking view and projection matrices (for world.js draw coherence)
 	draw(trans)
 	{
 		const gl = this.gl;

@@ -1,3 +1,8 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Raycasting - Amantide's and Woo
+// https://github.com/cgyurgyik/fast-voxel-traversal-algorithm/blob/master/overview/FastVoxelTraversalOverview.md
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 export class RayCast
 {
     constructor(world)
@@ -60,14 +65,17 @@ export class RayCast
                     const d2 = L.lengthSq() - tca * tca;
                     if (d2 > col.radius * col.radius) continue;
 
+                    // Check if distance is feasible
                     const thc = Math.sqrt(col.radius * col.radius - d2);
                     const t0 = tca - thc;
                     const tHit = (t0 >= 0 ? t0 : tca + thc);
                     if (tHit < 0 || tHit > maxDist) continue;
 
+                    // Get the hit actor
                     const actor = this.world.actors.find(a => a.collision === col) || null;
                     if (actor === ignoreActor) continue;
 
+                    // Set the hit parameters
                     if (!hit || tHit < hit.distance)
                     {
                         const point = origin.clone().add(dir.clone().multiplyScalar(tHit));

@@ -6,7 +6,7 @@ attribute vec2 aTexCoord;
 
 uniform mat4 uModelMatrix;
 uniform mat3 uNormalMatrix;
-uniform mat4 uModelViewProjection; 
+uniform mat4 uViewProjectionMatrix; 
 uniform bool uSwapYZ;
 
 varying vec2 vTexCoord;
@@ -26,5 +26,5 @@ void main() {
     
     vNormal = normalize(uNormalMatrix * normal);
     
-    gl_Position = uModelViewProjection * uModelMatrix * vec4(pos, 1.0);
+    gl_Position = uViewProjectionMatrix * uModelMatrix * vec4(pos, 1.0);
 }

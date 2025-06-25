@@ -1,3 +1,7 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Map actors in a 3d grid of cell size cellSize
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 export class SpatialGrid
 {
     constructor(cellSize = 20)
@@ -16,6 +20,9 @@ export class SpatialGrid
         return `${x},${y},${z}`;
     }
 
+    /*
+     * Map a 3d world coordinate, into a cell - grid-coordinates from world position
+     */
     _coords(transform)
     {
         const p = transform.position;
@@ -26,6 +33,9 @@ export class SpatialGrid
         ];
     }
 
+    /*
+     * Create a bucket of components for each grid cell that has a component
+     */    
     add(comp)
     {
         const [cx, cy, cz] = this._coords(comp.transform);
@@ -39,6 +49,10 @@ export class SpatialGrid
         bucket.add(comp);
     }
 
+    /*
+     * Find collision components in the nearby 26 cells
+     * #cells: 3x3x3 - 1 (the current cell of the component)
+     */ 
     queryNearby(comp)
     {
         const [cx, cy, cz] = this._coords(comp.transform);

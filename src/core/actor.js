@@ -1,3 +1,7 @@
+///////////////////////////////////////////////////////////////////////////////////
+// Base object spawnable in the world, can have many components attached
+///////////////////////////////////////////////////////////////////////////////////
+
 import { ObjMesh } from "../utils/FileType/obj.js";
 import { MeshComponent } from "./components/mesh_component.js";
 import { GameObject } from "./gameobject.js";
@@ -35,16 +39,17 @@ export class Actor extends GameObject
         this.components.push(this.mesh);
     }
 
-    OnCollisionTrigger(actor)
-    {
-        console.log("Colliding");
-    }
-
+    /*
+     * Run once per frame
+     */
     Tick(deltaTime)
     {
         // Leave blank
     }
 
+    /*
+     * Load shaders from text, compiles them
+     */
     async InitShaders(Vertex, Fragment) 
     {
         const VS = await this.mesh.loadShaderSource(Vertex);
@@ -54,16 +59,25 @@ export class Actor extends GameObject
         this.mesh.setProgram(VS, FS);
     }
 
+    /*
+     * Enable/disable actor's main mesh texture
+     */
     ShowTexture(param)
     {
         this.mesh.showTexture(param.checked);
     }
 
+    /*
+     * Swaps actor's main mesh orientation
+     */
     SwapYZ(param)
     {
         this.mesh.swapYZ(param.checked);
     }
 
+    /*
+     * Load .obj meshes from file 
+     */
     LoadObj(param)
     {
         return new Promise((resolve, reject) =>
@@ -85,7 +99,8 @@ export class Actor extends GameObject
 
                 xhr.open("GET", param, true);
                 xhr.send();
-            } else if (param.files && param.files[0])
+            } 
+            else if (param.files && param.files[0])
             {
                 // param is a file input element
                 const reader = new FileReader();
@@ -107,6 +122,11 @@ export class Actor extends GameObject
         });
     }
 
+    /*
+     * Finish processing the newly loaded mesh
+     * set the actor's main mesh
+     * Init and sets a collision component
+     */
     processLoadedMesh(objMesh)
     {
         const box = objMesh.getBoundingBox();
@@ -132,12 +152,18 @@ export class Actor extends GameObject
         this.AddCollisionComponent();
     }
 
+    /*
+     * Compute and set the collision component based on the passed mesh
+     */
     AddCollisionComponent()
     {
         this.collision = new ConvexCollisionComponent(this.mesh);
         this.components.push(this.collision);
     }
 
+    /*
+     * Load an image as an HTML IMG from an image file
+     */
     async LoadImage(path)
     {
         if (!path) return null;
@@ -174,6 +200,10 @@ export class Actor extends GameObject
         }
     }
 
+    /*
+     * Load the DIFFUSE texture
+     * Set the mesh DIFFUSE texture
+     */
     async LoadTexture(path, flipUV = false)
     {
         const img = await this.LoadImage(path);
@@ -182,16 +212,23 @@ export class Actor extends GameObject
         this.mesh.setTexture(img, flipUV);
     }
 
+    /*
+     * Load the EMISSIVE texture
+     * Set the mesh EMISSIVE texture
+     */
     async LoadEmissiveTexture(path, flipUV = false)
     {
         const img = await this.LoadImage(path);
         if (!img) return;
 
-        
         this.mesh.setEmissiveTexture(img, flipUV);
     }
 
 
+    /*
+     * Draw all the attached components 
+     * (Actually filter only collisions and meshes, might update in the future)
+     */
     DrawComponents(viewMatrix, projectionMatrix)
     {
         for (let component of this.components)
@@ -199,7 +236,7 @@ export class Actor extends GameObject
             if (component)
             {
                 if (component instanceof MeshComponent || component instanceof ConvexCollisionComponent)
-                { //  || component instanceof BoxComponent) {
+                { 
                     component.setPosition(this.transform.position);
                     component.setRotation(this.transform.rotation);
                 }
@@ -208,11 +245,19 @@ export class Actor extends GameObject
         }
     }
 
+    /*
+     * Mark this actor for despawning
+     * Actually handled by world
+     */
     Destroy()
     {
         this.bPendingDestroy = true;
     }
 
+    /*
+     * If the actor has a valid collision component, it's called on collision with another actor
+     * Save the collision direction (as a normal vector)
+     */
     onCollision(actor)
     {
         if (actor)
@@ -224,6 +269,9 @@ export class Actor extends GameObject
         // TODO
     }
 
+    /*
+     * Executed when world despawns this actor
+     */
     onDestroy()
     {
         // TODO

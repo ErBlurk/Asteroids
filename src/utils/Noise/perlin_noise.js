@@ -5,6 +5,7 @@
  *   let n = noise.noise3D(x, y, z);
  *   let fbm = noise.fbm3D(x, y, z, octaves, lacunarity, gain);
  */
+
 export class PerlinNoise
 {
     constructor(seed = 0)

@@ -1,6 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////
-// Below is the core WebGL initialization code.
+// Below is the "Renderer" code, handles some matrices for rendering
 ///////////////////////////////////////////////////////////////////////////////////
+
 import { Matrix4 } from "../utils/Math/Matrix4.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
 import { Rotator } from "../utils/Math/Rotator.js";
@@ -28,7 +29,9 @@ export class Renderer
         this.InitWebGL();
     }
 
-    // Called once to initialize
+    /*
+     * Called once to initialize gl (the whole rendering program)
+     */
     InitWebGL()
     {
         // Initialize the WebGL canvas
@@ -54,7 +57,9 @@ export class Renderer
         this.UpdateCanvasSize();
     }
 
-    // In renderer.js
+    /*
+     * Change the canvas size (both canvas for rendering and HUD)
+     */
     UpdateCanvasSize()
     {
         const dpr = window.devicePixelRatio || 1;
@@ -77,16 +82,22 @@ export class Renderer
         this.hudCanvas.style.width = vw + "px";
         this.hudCanvas.style.height = vh + "px";
 
-        // If you want crisp 2D drawing at DPR, reset the transform:
+        // For crisp 2D drawing, reset the transform:
         this.hudCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         // Tell WebGL the new viewport size
         this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 
-        // Update your projection matrix so 3D stays correct
+        // Update projection matrix so 3D stays correct
         this.UpdateProjectionMatrix();
     }
 
+    /*
+     * Compute the projection matrix based on a bunch of parameters
+     * Field of view
+     * Near and far plane
+     * Canvas ratio
+     */
     UpdateProjectionMatrix()
     {
         var r = this.canvas.width / this.canvas.height;
@@ -96,23 +107,15 @@ export class Renderer
         this.far = (this.position.z + MAX_RENDER_DISTANCE);;
         var fov = Math.PI * 60 / 180;
         this.perspectiveMatrix = Matrix4.GetPerspective(fov, r, this.near, this.far).elements;
-
-        // var s = 1 / Math.tan(fov / 2);
-        // this.perspectiveMatrix = [
-        //     s / r, 0, 0, 0,
-        //     0, s, 0, 0,
-        //     0, 0, (n + f) / (f - n), 1,
-        //     0, 0, -2 * n * f / (f - n), 0
-        // ];
     }
 
-    // This is the main function that handled WebGL drawing
+    // Return Model View Matrix
     GetModelViewProjection() 
     {
         return Matrix4.GetModelViewProjection(this.perspectiveMatrix, this.position.x, this.position.y, this.position.z, this.rotation.pitch, this.rotation.yaw);
     }
 
-    // This is the correct method to get the camera's combined View-Projection matrix
+    // This is the correct method to get the camera's combined View-Projection matrix, don't use the above GetModelViewProjection (model matrix handled in the shaders)
     GetViewProjectionMatrix()
     {
         const viewMatrix = Matrix4.GetViewMatrix(this.position.x, this.position.y, this.position.z, this.rotation.pitch, this.rotation.yaw);
@@ -123,39 +126,42 @@ export class Renderer
         return viewProjectionResult.elements; // Return the underlying Float32Array for gl.uniformMatrix4fv
     }
 
+    // View only matrix - as an array
     GetViewMatrix()
     {
         const viewMatrix = Matrix4.GetViewMatrix(this.position.x, this.position.y, this.position.z, this.rotation.pitch, this.rotation.yaw);
         return viewMatrix.elements;
     }
 
+    // Projection only matrix - as array
     GetProjectionMatrix()
     {
         const projectionMatrix = new Matrix4(this.perspectiveMatrix);
         return projectionMatrix.elements;
     }
 
+    // Draw the skybox
     DrawSkybox()
     {
         const gl = this.gl;
         const prog = this.skyboxProgram;
+
         gl.useProgram(prog);
 
         // Disable depth writes but keep testing
         gl.depthMask(false);
 
         // Compute inverse of viewProjection
-        const invVP = Matrix4
-            .Inverse(new Matrix4(this.GetViewProjectionMatrix()))
-            .elements;
+        const invVP = Matrix4.Inverse(new Matrix4(this.GetViewProjectionMatrix())).elements;
         gl.uniformMatrix4fv(this.skyboxMatrixLoc, false, invVP);
 
-        // Render cube
+        // Render skybox cube
         gl.bindBuffer(gl.ARRAY_BUFFER, this.skyboxBuffer);
         gl.enableVertexAttribArray(this.skyboxAttribLoc);
         gl.vertexAttribPointer(this.skyboxAttribLoc, 3, gl.FLOAT, false, 0, 0);
 
-        gl.drawArrays(gl.TRIANGLES, 0, 36); // assuming 12 triangles
+        // Pass vertex positions as triangles
+        gl.drawArrays(gl.TRIANGLES, 0, 36); // assuming 12 triangles (a cube)
 
         gl.depthMask(true);
     }
@@ -164,11 +170,18 @@ export class Renderer
     // HUD handling
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /*
+     * Draw:
+     * A crosshair
+     * Three dots
+     * Two quarters of circles
+     */
     drawHUD()
     {
         const hud = this.hudCanvas;
         const ctx = this.hudCtx;
 
+        // Clear HUD
         ctx.clearRect(0, 0, hud.width, hud.height);
         ctx.save();
         ctx.translate(0.5, 0.5);
@@ -176,6 +189,7 @@ export class Renderer
         const cx = hud.width / 2;
         const cy = hud.height / 2;
 
+        // Draw crosshair
         const r = Math.min(hud.width, hud.height) * 0.05;
         const sin60 = Math.sqrt(3) / 2;
         const pts = [
@@ -202,6 +216,9 @@ export class Renderer
         }
         ctx.stroke();
 
+
+        
+        // Draw circles at crosshair end
         ctx.fillStyle = "#FFF";
         for (let p of pts)
         {
@@ -210,7 +227,9 @@ export class Renderer
             ctx.fill();
         }
 
-        // quarter circles (centered around crosshair)
+
+
+        // Draw quarter circles (centered around crosshair)
         const qcRadius = Math.min(hud.width, hud.height) * 0.4;
 
         ctx.beginPath();

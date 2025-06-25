@@ -3,7 +3,7 @@ precision mediump float;
 attribute vec3 aPosition;
 attribute vec2 aTexCoord;
 
-uniform mat4 uModelViewProjection;
+uniform mat4 uViewProjectionMatrix;
 uniform mat4 uModelMatrix;
 uniform bool uSwapYZ;
 
@@ -23,7 +23,7 @@ void main() {
     vec3 worldNormal = normalize((uModelMatrix * vec4(pos, 0.0)).xyz);
     vNormal = -worldNormal; // flipped here to correct lighting direction
 
-    gl_Position = uModelViewProjection * uModelMatrix * vec4(pos, 1.0);
+    gl_Position = uViewProjectionMatrix * uModelMatrix * vec4(pos, 1.0);
     vTexCoord = aTexCoord;
     vGray = clamp(rand(pos), 0.3, 0.5);
 }

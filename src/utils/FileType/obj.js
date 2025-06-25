@@ -1,4 +1,5 @@
 // Copyright 2020, Cem Yuksel, University of Utah
+// Triangles winding order may vary depending on the obj model
 
 export class ObjMesh
 {

@@ -1,3 +1,7 @@
+///////////////////////////////////////////////////////////////////////////////////
+// Actor with a camera and a controller implemented - it's the actual player
+///////////////////////////////////////////////////////////////////////////////////
+
 import { Actor } from "./actor.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
 import { Matrix4 } from "../utils/Math/Matrix4.js";
@@ -5,7 +9,9 @@ import { RayCast } from "./collision/raycast.js";
 
 var MIN_Y_ROT = -80.0;
 var MAX_Y_ROT = 80.0;
+
 const MAX_RAY_DISTANCE = 4096;
+const MOUSE_SENSITIVITY = 0.002;    // tweak sensitivity
 
 export class Pawn extends Actor
 {
@@ -58,9 +64,12 @@ export class Pawn extends Actor
         this.InitMesh();
     }
 
+    /*
+     * Set the pawn components, like mesh, collision, and textures
+     */
     async InitMesh()
     {
-        await this.LoadObj("../assets/objects/spaceship.obj");
+        await this.LoadObj("../assets/objects/spaceship.obj"); // Handles collision component 
 
         const VertShader = './src/shaders/spaceship.vert';
         const FragShader = './src/shaders/spaceship.frag';
@@ -71,6 +80,9 @@ export class Pawn extends Actor
         await this.LoadEmissiveTexture("../assets/textures/spaceship_emissive.png", true);
     }
 
+    /*
+     * Run once per frame
+     */
     Tick(deltaTime)
     {
         this.HandleInput(deltaTime);
@@ -81,6 +93,10 @@ export class Pawn extends Actor
         }
     }
 
+    /*
+     * Move the pawn in the 3d world according to input
+     * Accounts for acceleration, drag and velocity
+     */
     AddMovementInput(dir, dt)
     {
         // Desired accel vector
@@ -111,10 +127,8 @@ export class Pawn extends Actor
         this.gl.uniform1f(velocityLoc, this.velocity.length() / this.maxSpeed);
     }
 
-    /**
-     * Orbit the camera around the pawn at `this.cameraOffset`
-     * (only yaw-rotated, with a fixed vertical offset) and
-     * make it look in the pawn’s facing direction.
+    /*
+     * Look around the world from the pawn's origin (FPV)
      */
     CameraLook()
     {
@@ -124,7 +138,7 @@ export class Pawn extends Actor
         camPos.z += (this.transform.position.z - camPos.z) * this.cameraLerp;
     }
 
-    /**
+    /*
      * Spring-damper orbit around the pawn.
      * Compute desired camera position = pawnPos + rotated offset.
      * Apply spring + damping to camera velocity.
@@ -137,7 +151,7 @@ export class Pawn extends Actor
         const pitch = this.transform.rotation.pitch;
         const yaw = this.transform.rotation.yaw;
 
-        // Compute horizontal forward: from input or pawn yaw
+        // Compute horizontal forward from input or pawn yaw (pass the direction parameter)
         let forward;
         if (direction.lengthSq() > 1e-4)
         {
@@ -154,13 +168,13 @@ export class Pawn extends Actor
 
         // Tilt forward by pitch around right axis in the forward–up plane
         const cosP = Math.cos(pitch);
-        const sinP = -Math.sin(pitch);
+        const sinP = -Math.sin(pitch); // Be aware of signs!
 
         let pitchedForward = forward.clone().multiplyScalar(cosP);
         pitchedForward.add(up.clone().multiplyScalar(sinP));
         pitchedForward.normalize();
 
-        // Desired camera position = pawnPos + right*X + up*Y + pitchedForward*Z
+        // Desired camera position = pawnPos + right * X + up * Y + pitchedForward * Z
         let desired = pawnPos.clone()
         desired.addInPlace(right.multiplyScalar(this.cameraOffset.x));
         desired.addInPlace(up.multiplyScalar(this.cameraOffset.y));
@@ -176,7 +190,7 @@ export class Pawn extends Actor
         } 
         else
         {
-            // Spring-damper: F = k·x − c·v
+            // Spring-damper: F = k * x − c * v
             const disp = desired.clone().subtract(camPos);
             const springF = disp.multiplyScalar(this.cameraSpringStiffness);
             const dampingF = this.cameraSpringVelocity.clone().multiplyScalar(this.cameraSpringDamping);
@@ -196,6 +210,9 @@ export class Pawn extends Actor
         this.world.renderer.viewMatrix = Matrix4.lookAt(eye, center, [0, 1, 0]);
     }
 
+    /*
+     * Compute the translation increments along the correct movement axis
+     */
     HandleInput(dt)
     {
         const world = this.world;
@@ -204,14 +221,15 @@ export class Pawn extends Actor
 
         // Build a unit “input direction” from WASD/QE:
         let input = new Vector3(0, 0, 0);
-        if (this.keysPressed['w']) input.z += 1;   // Forward
+        if (this.keysPressed['w']) input.z += 1;    // Forward
         if (this.keysPressed['s']) input.z += -1;   // Backward
         if (this.keysPressed['a']) input.x += -1;   // Left
-        if (this.keysPressed['d']) input.x += 1;   // Right
+        if (this.keysPressed['d']) input.x += 1;    // Right
         if (this.keysPressed['q']) input.y += -1;   // Down
-        if (this.keysPressed['e']) input.y += 1;   // Up
+        if (this.keysPressed['e']) input.y += 1;    // Up
         if (input.lengthSq() > 0) input.normalize();
 
+        // Compute rotations
         const cosYaw = Math.cos(yaw);
         const sinYaw = Math.sin(yaw);
         const cosPitch = Math.cos(pitch);
@@ -223,9 +241,10 @@ export class Pawn extends Actor
         // right is 90° to the right of forward, flattened on Y:
         const right = new Vector3(cosYaw, 0, -sinYaw).normalize();
 
+        // up vector is always along Y axis
         const up = new Vector3(0, 1, 0);
 
-        // blend them with your input:
+        // blend them with the input:
         let direction = new Vector3();
         direction.addInPlace(forward.clone().multiplyScalar(input.z));
         direction.addInPlace(right.clone().multiplyScalar(input.x));
@@ -235,7 +254,7 @@ export class Pawn extends Actor
         // Apply acceleration, friction, clamp & move pawn
         this.AddMovementInput(direction, dt);
 
-        // Orbit around actor camera
+        // Orbit around actor camera (it's important to take an unscaled forward vector only)
         direction = new Vector3().addInPlace(forward.clone());
         this.CameraOrbit(direction, dt, true);
 
@@ -245,34 +264,39 @@ export class Pawn extends Actor
         if (document.getElementById("posZ")) document.getElementById("posZ").innerHTML = this.transform.position.z.toFixed(2);
     }
 
+    /*
+     * Rotate the camera and the pawn according to the mouse movement
+     */
     _onMouseMove = (event) =>
     {
-        const canvas = this.world.renderer.canvas;
-        const clamp = (v, min, max) => v < min ? min : v > max ? max : v;
-        const speed = 0.002;  // tweak sensitivity
-
-        this.transform.rotation.yaw += event.movementX * speed;
-        this.transform.rotation.pitch += event.movementY * speed;
-        this.transform.rotation.pitch = clamp(this.transform.rotation.pitch, MIN_Y_ROT, MAX_Y_ROT);
-
-        this.world.renderer.rotation.yaw = this.transform.rotation.yaw;
-        this.world.renderer.rotation.pitch = this.transform.rotation.pitch;
-
-        // update UI if present…
-        if (document.getElementById("rotX")) document.getElementById("rotX").innerHTML = (this.world.renderer.rotation.yaw * 180 / Math.PI).toFixed(2);
-        if (document.getElementById("rotY")) document.getElementById("rotY").innerHTML = (this.world.renderer.rotation.pitch * 180 / Math.PI).toFixed(2);
-    }
-
-    InitController()
-    {
-        const canvas = this.world.renderer.canvas;
-
         const clamp = (value, min, max) =>
         {
             if (value < min) return min;
             if (value > max) return max;
             return value;
         }
+
+        const canvas = this.world.renderer.canvas;
+        const speed = MOUSE_SENSITIVITY;
+
+        this.transform.rotation.yaw   += event.movementX * speed;
+        this.transform.rotation.pitch += event.movementY * speed;
+        this.transform.rotation.pitch  = clamp(this.transform.rotation.pitch, MIN_Y_ROT, MAX_Y_ROT);
+
+        this.world.renderer.rotation.yaw   = this.transform.rotation.yaw;
+        this.world.renderer.rotation.pitch = this.transform.rotation.pitch;
+
+        // update UI if present
+        if (document.getElementById("rotX")) document.getElementById("rotX").innerHTML = (this.world.renderer.rotation.yaw * 180 / Math.PI).toFixed(2);
+        if (document.getElementById("rotY")) document.getElementById("rotY").innerHTML = (this.world.renderer.rotation.pitch * 180 / Math.PI).toFixed(2);
+    }
+
+    /*
+     * Init the event handlers for input
+     */
+    InitController()
+    {
+        const canvas = this.world.renderer.canvas;
 
         document.addEventListener('keydown', (event) =>
         {
@@ -302,7 +326,8 @@ export class Pawn extends Actor
             if (document.pointerLockElement === canvas)
             {
                 document.addEventListener('mousemove', this._onMouseMove, false);
-            } else
+            } 
+            else
             {
                 document.removeEventListener('mousemove', this._onMouseMove, false);
             }
@@ -338,10 +363,12 @@ export class Pawn extends Actor
         });
     }
 
+    /*
+     * Called when colliding with an asteroid, destroy it
+     */
     onCollision(actor)
     {
         actor.Destroy();
-        //console.log("Collided");
     }
 
     // Raycasting managing
@@ -371,6 +398,7 @@ export class Pawn extends Actor
         // hand it off to the world
         this.world.DrawLaser(origin, hit ? hit.point : end, 0.01);
 
+        // Manage mouse input (do something with the raycast)
         if (hit)
         {
             if(hit.actor)
@@ -394,5 +422,4 @@ export class Pawn extends Actor
             }
         }
     }
-
 }

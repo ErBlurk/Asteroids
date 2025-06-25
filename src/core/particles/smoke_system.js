@@ -1,3 +1,7 @@
+///////////////////////////////////////////////////////////////////////////////////
+// Very basic particle system of meshes (namely Icospheres)
+///////////////////////////////////////////////////////////////////////////////////
+
 import { Transform } from "../../utils/Math/Transform.js";
 import { Vector3 } from "../../utils/Math/Vector3.js";
 import { ProceduralIcosphere } from "../../utils/ProceduralGeometry/icosphere.js";
@@ -34,6 +38,9 @@ export class SmokeSystem
         this.initParticles();
     }
 
+    /*
+     * Spawn the particles (icospheres)
+     */
     initParticles()
     {
         for ( let i = 0; i < this.count; i++ )
@@ -42,22 +49,31 @@ export class SmokeSystem
         }
     }
 
+    /*
+     * Spawn an icosphere 
+     * Set transform, scale, lifetime, and other parameters
+     */
     spawnParticle()
     {
         const transform = new Transform();
 
+        // Initial particle scale
         const startScale = randomRange(this.minScaleFactor, this.maxScaleFactor);
 
+        // Initial position
         transform.position = this.emitterPos.clone();
         transform.scale = this.scale.multiplyScalar(startScale);
 
+        // Speed and direction 
         const speed     = randomRange( this.minRadius, this.maxRadius );
         const dirVector = this.direction ? randomConeVector( this.direction, this.coneAngleRadians ) : randomDiskVector();
 
+        // Velocity, growth (not working), and lifespan
         const velocity = dirVector.multiplyScalarInPlace( speed );
         const lifespan = randomRange( this.minLife, this.maxLife );
-        const growth     = (this.maxScaleFactor - startScale) / lifespan;
+        const growth   = (this.maxScaleFactor - startScale) / lifespan;
 
+        // Set the mesh (using the predefined icosphere vertexes)
         const mesh = new MeshComponent( this.gl );
         mesh.setMesh( this._sphereGeo.positions, this._sphereGeo.texCoords, this._sphereGeo.normals );
         mesh.setTransform( transform );
@@ -65,14 +81,19 @@ export class SmokeSystem
 
         // set the light uniform and the random particle color
         this.gl.useProgram(mesh.prog);
-        const colLoc = this.gl.getUniformLocation(mesh.prog, "uGray");
-        const lightLoc = this.gl.getUniformLocation(mesh.prog, "uLightDirection");
+        const colLoc    = this.gl.getUniformLocation(mesh.prog, "uGray");
+        const lightLoc  = this.gl.getUniformLocation(mesh.prog, "uLightDirection");
         this.gl.uniform1f(colLoc, randomRange( 0.8, 0.9 ));
         this.gl.uniform3f(lightLoc, this.lightDirection.x, this.lightDirection.y, this.lightDirection.z);
 
+        // Register the particle with some parameters
         this.particles.push({ transform, velocity, age: 0, lifespan, mesh, startScale, growth });
     }
 
+    /*
+     * Run once per frame
+     * Dictate how the particle evolves in time
+     */
     ParticlesTick( deltaTime )
     {
         for ( let i = this.particles.length - 1; i >= 0; i-- )
@@ -83,6 +104,7 @@ export class SmokeSystem
 
             if ( p.age >= p.lifespan )
             {
+                // If too old, remove from the registered particles, skip it next time
                 this.particles.splice( i, 1 );
                 continue;
             }
@@ -91,12 +113,16 @@ export class SmokeSystem
 
             p.transform.position.addInPlace( moveDelta );
 
-            // const newScale = p.startScale + p.growth * p.age; // Weird results when scaling
+            // Weird results when scaling - skip scaling, update translation and rotation
+            // const newScale = p.startScale + p.growth * p.age; 
             // p.transform.scale = p.transform.scale.clone().multiplyScalar(newScale);
             p.mesh.setTransform( p.transform );
         }
     }
 
+    /*
+     * Draw the active particles meshes
+     */
     ParticlesDraw( viewMatrix, projectionMatrix )
     {
         for ( let p of this.particles )
@@ -123,6 +149,11 @@ function randomRange( min, max )
     return min + Math.random() * ( max - min );
 }
 
+/*
+ * For disk like explosion
+ * Basically a supernova effect
+ * It does not work as expected
+ */ 
 function randomDiskVector() {
     // Pick a random disk normal (tilt) on the unit sphere
     const normal = randomUnitVector();
@@ -138,6 +169,9 @@ function randomDiskVector() {
     return u.multiplyScalar(Math.cos(theta)).addInPlace(v.multiplyScalar(Math.sin(theta))).normalize();
 }
 
+/*
+ * Return a random direction in a cone of angle angleCone, oriented in a preferred direction
+ */
 function randomConeVector( direction, coneAngle )
 {
     const dir = direction.clone().normalize();
@@ -157,6 +191,9 @@ function randomConeVector( direction, coneAngle )
     return dir.multiplyScalar(z).addInPlace(tangent.multiplyScalar(sinAngle * Math.cos(phi))).addInPlace(bitan.multiplyScalar(sinAngle * Math.sin(phi))).normalize();
 }
 
+/*
+ * Create a random Vector3 and normalize it (built differently than Vector3.random())
+ */
 function randomUnitVector()
 {
     const theta = Math.random() * 2 * Math.PI;
@@ -168,13 +205,14 @@ function randomUnitVector()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Shaders for smoke
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 const smokeVS = `
 precision mediump float;
 attribute vec3 aPosition;
 attribute vec3 aNormal;
 
 uniform mat3 uNormalMatrix;
-uniform mat4 uModelViewProjection;
+uniform mat4 uViewProjectionMatrix;
 uniform mat4 uModelMatrix;
 uniform bool uSwapYZ;
 
@@ -188,7 +226,7 @@ void main()
     if (uSwapYZ)
         pos = vec3(pos.x, pos.z, pos.y);
 
-    gl_Position = uModelViewProjection * uModelMatrix * vec4(pos, 1.0);
+    gl_Position = uViewProjectionMatrix * uModelMatrix * vec4(pos, 1.0);
 }
 `;
 
@@ -215,9 +253,6 @@ void main()
     // apply the grey tint
     vec3 color = vec3(uGray * intensity);
 
-    // smoke should be semi-transparent based on lighting
-    float alpha = intensity * 0.5;
-
-    gl_FragColor = vec4(color, alpha);
+    gl_FragColor = vec4(color, 1.0);
 }
 `;

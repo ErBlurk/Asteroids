@@ -1,3 +1,7 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Kinematic and Physics simulating asteroids (actors)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 import { Actor } from "../core/actor.js";
 import { SmokeSystem } from "../core/particles/smoke_system.js";
 import { Vector3 } from "../utils/Math/Vector3.js";
@@ -46,6 +50,7 @@ export class Asteroid extends Actor
         this.InitShaders(VertShader, FragShader);
     }
 
+    // Once per frame
     Tick(deltaTime)
     {
         if (this.isPulling)
@@ -109,13 +114,13 @@ export class Asteroid extends Actor
         // spring force
         const springForce = displacement.multiplyScalar(stiffness);
 
-        // damping force F_d = −c·v
+        // damping force F_d = −c * v
         const dampingForce = this.pullVelocity.clone().multiplyScalar(-damping);
 
         // net accel (mass = 1)
         const acceleration = springForce.addInPlace(dampingForce);
 
-        // integrate velocity: v <- v + a·dt
+        // integrate velocity: v <- v + a * dt
         this.pullVelocity.addInPlace(acceleration.multiplyScalar(dt));
 
         // clamp to maxSpeed
@@ -124,7 +129,7 @@ export class Asteroid extends Actor
             this.pullVelocity.normalize().multiplyScalar(maxSpeed);
         }
 
-        // integrate position: p <- p + v·dt
+        // integrate position: p <- p + v * dt
         this.transform.position.addInPlace(this.pullVelocity.clone().multiplyScalar(dt));
 
         // stop when we’re “close enough”
@@ -139,6 +144,7 @@ export class Asteroid extends Actor
     SetPullTarget(target)
     {
         this.isPulling = true;
+        this.impulseVelocity.set(0, 0, 0); // Reset impulse velocity
         this.pullTarget = target.clone();
     }
 
@@ -170,6 +176,10 @@ export class Asteroid extends Actor
         this.impulseVelocity = direction.clone().normalize().multiplyScalar(magnitude);
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Asteroid physics sim - elastic collision with (random) fracture 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+
     ComputeElasticForces(actor)
     {
         // spawn between 1 and MAX child asteroids
@@ -190,7 +200,7 @@ export class Asteroid extends Actor
             // Translate slightly and randomly in a cone along a given direction
             const direction = randomDirectionInCone(this.lastCollisionDirection, 30.0);
             const spawnPos = this.transform.position.clone();
-            spawnPos.addInPlace(direction.multiplyScalar(this.collision.radius * 2));
+            spawnPos.addInPlace(direction.multiplyScalar(this.collision.radius));
 
             // Set the new trasnform position
             childTransform.position.set(spawnPos.x, spawnPos.y, spawnPos.z);
@@ -232,7 +242,7 @@ export class Asteroid extends Actor
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Others
+    // Init the asteroid (procedural) mesh
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     generateIcosphere(iterations = 2)
@@ -276,6 +286,7 @@ export class Asteroid extends Actor
         this.Destroy();
     }
 
+    // Spawn a particle system in there
     onDestroy()
     {
         let smokeSystem = new SmokeSystem(
@@ -283,7 +294,7 @@ export class Asteroid extends Actor
             this.world,
             this.transform.position,      // emitter position
             {
-                count: 15,             // how many particles
+                count: 15,                // how many particles
                 minRadius: 1,
                 maxRadius: 5,
                 minLife: 3,

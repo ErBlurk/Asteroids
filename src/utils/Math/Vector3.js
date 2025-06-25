@@ -5,8 +5,10 @@
 // Includes static “zero” and “unitary” (1,1,1) as requested.
 ///////////////////////////////////////////////////////////////////////////////////
 
-export class Vector3 {
-    constructor(x = 0, y = 0, z = 0) {
+export class Vector3
+{
+    constructor(x = 0, y = 0, z = 0)
+    {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -14,62 +16,73 @@ export class Vector3 {
 
     // Instance methods
 
-    clone() {
+    clone()
+    {
         return new Vector3(this.x, this.y, this.z);
     }
 
-    set(x, y, z) {
+    set(x, y, z)
+    {
         this.x = x;
         this.y = y;
         this.z = z;
         return this;
     }
 
-    copy(v) {
+    copy(v)
+    {
         this.x = v.x;
         this.y = v.y;
         this.z = v.z;
         return this;
     }
 
-    add(v) {
+    add(v)
+    {
         return new Vector3(this.x + v.x, this.y + v.y, this.z + v.z);
     }
 
-    addInPlace(v) {
+    addInPlace(v)
+    {
         this.x += v.x;
         this.y += v.y;
         this.z += v.z;
         return this;
     }
 
-    subtract(v) {
+    subtract(v)
+    {
         return new Vector3(this.x - v.x, this.y - v.y, this.z - v.z);
     }
 
-    subtractInPlace(v) {
+    subtractInPlace(v)
+    {
         this.x -= v.x;
         this.y -= v.y;
         this.z -= v.z;
         return this;
     }
 
-    multiplyScalar(s) {
+    multiplyScalar(s)
+    {
         return new Vector3(this.x * s, this.y * s, this.z * s);
     }
 
-    multiplyScalarInPlace(s) {
+    multiplyScalarInPlace(s)
+    {
         this.x *= s;
         this.y *= s;
         this.z *= s;
         return this;
     }
 
-    dot(v) {
+    dot(v)
+    {
         return this.x * v.x + this.y * v.y + this.z * v.z;
     }
 
-    cross(v) {
+    cross(v)
+    {
         return new Vector3(
             this.y * v.z - this.z * v.y,
             this.z * v.x - this.x * v.z,
@@ -77,17 +90,21 @@ export class Vector3 {
         );
     }
 
-    lengthSq() {
+    lengthSq()
+    {
         return this.x * this.x + this.y * this.y + this.z * this.z;
     }
 
-    length() {
+    length()
+    {
         return Math.sqrt(this.lengthSq());
     }
 
-    normalize() {
+    normalize()
+    {
         const len = this.length();
-        if (len > 0) {
+        if (len > 0)
+        {
             this.x /= len;
             this.y /= len;
             this.z /= len;
@@ -95,32 +112,38 @@ export class Vector3 {
         return this;
     }
 
-    normalized() {
+    normalized()
+    {
         const len = this.length();
-        if (len > 0) {
+        if (len > 0)
+        {
             return new Vector3(this.x / len, this.y / len, this.z / len);
         }
         return new Vector3(0, 0, 0);
     }
 
     // Returns an array [x, y, z]
-    toArray() {
+    toArray()
+    {
         return [this.x, this.y, this.z];
     }
 
     // Static methods
 
     // Returns a new Vector3(0, 0, 0)
-    static zero() {
+    static zero()
+    {
         return new Vector3(0, 0, 0);
     }
 
     // Returns a new Vector3(1, 1, 1)
-    static unitary() {
+    static unitary()
+    {
         return new Vector3(1, 1, 1);
     }
 
-    static random() {
+    static random()
+    {
         return new Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
     }
 }

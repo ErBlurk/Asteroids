@@ -14,7 +14,7 @@ void main() {
         : vec3(vGray);
 
     float diff = max(dot(normalize(vNormal), normalize(uLightDirection)), 0.0);
-    float ambient = 0.1;
+    float ambient = 0.3;
     float intensity = ambient + diff * (1.0 - ambient);
 
     gl_FragColor = vec4(base * intensity, 1.0);

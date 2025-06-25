@@ -5,25 +5,31 @@
 // (identity, translation, rotation, scale), multiplication, and helpers.
 ///////////////////////////////////////////////////////////////////////////////////
 
-export class Matrix4 {
-    constructor(elements = null) {
+export class Matrix4
+{
+    constructor(elements = null)
+    {
         // If `elements` is provided, assume it’s a length‐16 column‐major array.
         // Otherwise, initialize to identity.
-        if (elements && elements.length === 16) {
+        if (elements && elements.length === 16)
+        {
             this.elements = new Float32Array(elements);
-        } else {
+        } else
+        {
             this.elements = new Float32Array(16);
             this.setIdentity();
         }
     }
 
     // Copy constructor
-    clone() {
+    clone()
+    {
         return new Matrix4(this.elements);
     }
 
     // Sets this to identity matrix.
-    setIdentity() {
+    setIdentity()
+    {
         const e = this.elements;
         e[0] = 1; e[4] = 0; e[8]  = 0; e[12] = 0;
         e[1] = 0; e[5] = 1; e[9]  = 0; e[13] = 0;
@@ -33,7 +39,8 @@ export class Matrix4 {
     }
 
     // Sets this to a translation matrix T(x,y,z).
-    setTranslation(x, y, z) {
+    setTranslation(x, y, z)
+    {
         this.setIdentity();
         this.elements[12] = x;
         this.elements[13] = y;
@@ -42,7 +49,8 @@ export class Matrix4 {
     }
 
     // Sets this to a scaling matrix S(sx, sy, sz).
-    setScale(sx, sy, sz) {
+    setScale(sx, sy, sz)
+    {
         const e = this.elements;
         e[0] = sx; e[4] = 0;  e[8]  = 0;  e[12] = 0;
         e[1] = 0;  e[5] = sy; e[9]  = 0;  e[13] = 0;
@@ -52,27 +60,33 @@ export class Matrix4 {
     }
 
     // Sets this to a rotation matrix from a Rotator (pitch, yaw, roll).
-    setRotationFromRotator(rotator) {
+    setRotationFromRotator(rotator)
+    {
         const R = rotator.toMatrix4().elements;
         this.elements.set(R);
         return this;
     }
 
     // Multiply this matrix in place by another: this = this * m
-    multiply(m) {
+    multiply(m)
+    {
         const result = Matrix4.multiplyArrays(this.elements, m.elements);
         this.elements.set(result);
         return this;
     }
 
     // Returns a new Matrix4 = A * B
-    static multiplyArrays(A, B) {
+    static multiplyArrays(A, B)
+    {
         // A and B are length‐16 Float32Array (column‐major).
         const C = new Float32Array(16);
-        for (let i = 0; i < 4; i++) {     // row
-            for (let j = 0; j < 4; j++) { // column
+        for (let i = 0; i < 4; i++)
+        {     // row
+            for (let j = 0; j < 4; j++)
+            { // column
                 let sum = 0;
-                for (let k = 0; k < 4; k++) {
+                for (let k = 0; k < 4; k++)
+                {
                     // C[i + 4*j] = sum over k of A[i + 4*k] * B[k + 4*j]
                     sum += A[i + 4 * k] * B[k + 4 * j];
                 }
@@ -83,29 +97,34 @@ export class Matrix4 {
     }
 
     // Returns a new identity matrix
-    static identity() {
+    static identity()
+    {
         return new Matrix4().setIdentity();
     }
 
     // Creates a pure‐translation matrix
-    static translation(x, y, z) {
+    static translation(x, y, z)
+    {
         return new Matrix4().setTranslation(x, y, z);
     }
 
     // Creates a pure‐scale matrix
-    static scale(sx, sy, sz) {
+    static scale(sx, sy, sz)
+    {
         return new Matrix4().setScale(sx, sy, sz);
     }
 
     // Creates a rotation matrix from a Rotator
-    static rotationFromRotator(rotator) {
+    static rotationFromRotator(rotator)
+    {
         return new Rotator(rotator.pitch, rotator.yaw, rotator.roll).toMatrix4();
     }
 
     // Computes and returns the inverse of this matrix (if invertible).
     // For brevity, we implement a general 4×4 inverse. If you only need
     // normal‐matrix (inverse‐transpose of upper‐left 3×3), see getNormalMatrix().
-    invert() {
+    invert()
+    {
         const m = this.elements;
         const inv = new Float32Array(16);
         inv[0] =   m[5]  * m[10] * m[15] - 
@@ -206,13 +225,15 @@ export class Matrix4 {
                    m[8]  * m[2]  * m[5];
 
         let det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
-        if (det === 0) {
+        if (det === 0)
+        {
             console.warn("Matrix4.invert(): determinant is zero, cannot invert.");
             return this.setIdentity();
         }
 
         det = 1.0 / det;
-        for (let i = 0; i < 16; i++) {
+        for (let i = 0; i < 16; i++)
+        {
             inv[i] *= det;
         }
         this.elements.set(inv);
@@ -220,13 +241,15 @@ export class Matrix4 {
     }
 
     // Returns a new Matrix4 that is the inverse of this one.
-    inverted() {
+    inverted()
+    {
         return this.clone().invert();
     }
 
     // Computes the 3×3 “normal matrix” (inverse‐transpose of the upper‐left 3×3 of this 4×4).
     // Returns a Float32Array of length 9 in column-major order.
-    getNormalMatrix() {
+    getNormalMatrix()
+    {
         // Extract upper‐left 3×3
         const m = this.elements;
         const a00 = m[0], a01 = m[4], a02 = m[8];
@@ -261,7 +284,8 @@ export class Matrix4 {
     }
 
     // Transpose this matrix in place
-    transpose() {
+    transpose()
+    {
         const m = this.elements;
         let tmp;
 
@@ -277,14 +301,17 @@ export class Matrix4 {
 
     // Multiplies two matrices and returns the result A*B.
     // The arguments A and B are arrays, representing column-major matrices.
-    static MatrixMult( A, B )
+    static MatrixMult(A, B)
     {
         var C = [];
-        for ( var i=0; i<4; ++i ) {
-            for ( var j=0; j<4; ++j ) {
+        for (var i = 0; i < 4; ++i)
+        {
+            for (var j = 0; j < 4; ++j)
+            {
                 var v = 0;
-                for ( var k=0; k<4; ++k ) {
-                    v += A[j+4*k] * B[k+4*i];
+                for (var k = 0; k < 4; ++k)
+                {
+                    v += A[j + 4 * k] * B[k + 4 * i];
                 }
                 C.push(v);
             }
@@ -329,7 +356,8 @@ export class Matrix4 {
         return mvp;
     }
 
-    static GetViewMatrix(cx, cy, cz, pitch, yaw) {
+    static GetViewMatrix(cx, cy, cz, pitch, yaw)
+    {
         // build inverse-translation
         const trans = [
             1, 0, 0, 0,
@@ -396,7 +424,8 @@ export class Matrix4 {
     // eye: [x, y, z] position of the camera
     // center: [x, y, z] point the camera is looking at
     // up: [x, y, z] up direction of the camera
-    static lookAt(eye, center, up) {
+    static lookAt(eye, center, up)
+    {
         const x0 = eye[0], x1 = eye[1], x2 = eye[2];
         const y0 = center[0], y1 = center[1], y2 = center[2];
         const z0 = up[0], z1 = up[1], z2 = up[2];

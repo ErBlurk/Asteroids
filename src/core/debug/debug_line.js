@@ -1,8 +1,12 @@
+///////////////////////////////////////////////////////////////////////////////////
+// Laser like debug line 
+///////////////////////////////////////////////////////////////////////////////////
+
 export class DebugLine
 {
     // Shared GL program + buffer for all DebugLine instances
-    static _lineProgram = null;
-    static _lineBuffer = null;
+    static lineProgram = null;
+    static lineBuffer = null;
 
     constructor(world, origin, end, color = [1, 0, 0, 1], duration = 1000)
     {
@@ -18,7 +22,9 @@ export class DebugLine
         DebugLine.InitProgram(world);
     }
 
-    /** Returns true once this line’s lifetime has elapsed */
+    /*
+     * Returns true once this line’s lifetime has elapsed 
+     */
     HasEnded()
     {
         if (this.bDrawOnce)
@@ -29,18 +35,20 @@ export class DebugLine
         return performance.now() - this.startTime > this.duration;
     }
 
-    /** Draws the line if still alive */
+    /* 
+     * Draws the line if still alive (good to check also in world)
+     */
     draw()
     {
         if (this.HasEnded()) return;
 
         const gl = this.world.gl;
-        const prog = DebugLine._lineProgram;
+        const prog = DebugLine.lineProgram;
 
         gl.useProgram(prog);
 
         // upload vertex positions
-        gl.bindBuffer(gl.ARRAY_BUFFER, DebugLine._lineBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, DebugLine.lineBuffer);
         gl.bufferData(
             gl.ARRAY_BUFFER,
             new Float32Array([
@@ -63,16 +71,19 @@ export class DebugLine
 
         // line color
         const colorLoc = gl.getUniformLocation(prog, "uColor");
-        gl.uniform4f(colorLoc, ...this.color);
+        gl.uniform4f(colorLoc, ...this.color); // Weird syntax but it works?
 
         // draw the line
         gl.drawArrays(gl.LINES, 0, 2);
     }
 
-    /** Lazily compiles & links a simple line‐drawing shader + buffer */
+    /*
+     * Compiles & links a simple line‐drawing shader + buffer 
+     * Similar to component's InitShaders
+     */
     static InitProgram(world)
     {
-        if (DebugLine._lineProgram) return;
+        if (DebugLine.lineProgram) return;
 
         const gl = world.gl;
 
@@ -88,8 +99,11 @@ export class DebugLine
             return s;
         }
 
+        // Get shaders, compile them
         const vs = compile(gl.VERTEX_SHADER, vsSrc);
         const fs = compile(gl.FRAGMENT_SHADER, fsSrc);
+
+        // Bind shaders to the new program
         const prog = gl.createProgram();
         gl.attachShader(prog, vs);
         gl.attachShader(prog, fs);
@@ -99,10 +113,15 @@ export class DebugLine
             console.error(gl.getProgramInfoLog(prog));
         }
 
-        DebugLine._lineProgram = prog;
-        DebugLine._lineBuffer = gl.createBuffer();
+        // Set the static shared program
+        DebugLine.lineProgram = prog;
+        DebugLine.lineBuffer = gl.createBuffer();
     }
 }
+
+///////////////////////////////////////////////////////////////////////////////////
+// Some laser like shaders (as default)
+///////////////////////////////////////////////////////////////////////////////////
 
 const vsSrc = `
 attribute vec3 aPosition;
@@ -112,7 +131,8 @@ void main() {
   gl_Position = uProjectionMatrix * uViewMatrix * vec4(aPosition, 1.0);
 }
 `;
-  const fsSrc = `
+
+const fsSrc = `
 precision mediump float;
 uniform vec4 uColor;
 void main() {
