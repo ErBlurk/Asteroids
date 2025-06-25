@@ -12,6 +12,8 @@ import { DirectionalLight } from "./directional_light.js";
 import { SpatialGrid } from "./collision/spatial_grid.js";
 import { SmokeSystem } from "./particles/smoke_system.js";
 import { DebugLine } from "./debug/debug_line.js";
+import { Mercury } from "../game/mercury.js";
+import { Earth } from "../game/earth.js";
 
 export class World
 {
@@ -32,13 +34,14 @@ export class World
         this.debugLines = [];
 
         // Simple directional light manager
-        this.directionalLight = new DirectionalLight(new Vector3(0.5, 1, -1));
+        this.directionalLight = new DirectionalLight(new Vector3(-1, 0.5, 1));
 
         // Collision system
         this.grid = new SpatialGrid(20);
 
         // Scene generation
         this.SpawnAsteroids();
+        this.SpawnPlanets();
 
         // this.DebugSpheres();
 
@@ -148,6 +151,22 @@ export class World
             const actor = new Asteroid(this.gl, this, t, subdivisions, true, macroScale, macroAmp, microScale, microAmp);
             this.SpawnActor(actor);
         }
+    }
+
+    SpawnPlanets()
+    {
+        let transform = new Transform();
+
+        transform.position.set(-128, 32, 512);
+        transform.scale.set(25, 25, 25);
+        let mercury = new Mercury(this.gl, this, transform.clone());
+
+        transform.position.set(245, 60, 800);
+        transform.scale.set(15, 15, 15);
+        let earth = new Earth(this.gl, this, transform.clone());
+
+        this.SpawnActor(mercury);
+        this.SpawnActor(earth);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
