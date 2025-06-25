@@ -44,7 +44,7 @@ export class Pawn extends Actor
         // Spring-damper parameters for the camera
         this.cameraSpringVelocity = Vector3.zero();    // current camera velocity
         this.cameraSpringStiffness = 500;              // "spring" constant
-        this.cameraSpringDamping = 50;               // damping coefficient
+        this.cameraSpringDamping = 50;                 // damping coefficient
 
         // laser state
         this.rayCaster        = new RayCast(world);
@@ -138,6 +138,9 @@ export class Pawn extends Actor
         this.gl.useProgram(this.mesh.prog);
         const velocityLoc = this.gl.getUniformLocation(this.mesh.prog, "uVelocity");
         this.gl.uniform1f(velocityLoc, this.velocity.length() / this.maxSpeed);
+
+        // Update on scree info
+        document.getElementById("vel").innerHTML = this.velocity.length().toFixed(2);
     }
 
     /*

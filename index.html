@@ -102,9 +102,8 @@
             /* Adjust line height for compactness */
         }
 
-        /* Dotted border */
-        hr.dotted {
-            border-top: 3px dotted #bbb;
+        hr {
+            border-top: 1px #bbb;
         }
 
         #hud {
@@ -124,23 +123,26 @@
 
     <div id="controls-div">
         <div id="controls">
-            <img id="texture-img" />
             <div class="control-group">
                 <div class="control">
                     <div class="control">
                         <p>FPS: <span id="fps">0.00</span></p>
                     </div>
-                    <hr class="dotted">
+                    <hr>
                     <div class="control">
-                        <p>Rotation X: <span id="rotX">0.00</span></p>
-                        <p>Rotation Y: <span id="rotY">0.00</span></p>
-                        <p>Rotation Z: <span id="rotZ">0.00</span></p>
+                        <p style="color: lightcoral">Rotation X: <span style="padding-left:1em" id="rotX">0.00</span></p>
+                        <p style="color: lightyellow">Rotation Y:  <span style="padding-left:1em" id="rotY">0.00</span></p>
+                        <!--<p>Rotation Z: <span id="rotZ">0.00</span></p>-->
                     </div>
-                    <hr class="dotted">
+                    <hr>
                     <div class="control">
-                        <p>Position X: <span id="posX">0.00</span></p>
-                        <p>Position Y: <span id="posY">0.00</span></p>
-                        <p>Position Z: <span id="posZ">0.00</span></p>
+                        <p style="color: lightcoral">Position X: <span style="padding-left:1em" id="posX">0.00</span></p>
+                        <p style="color: lightyellow">Position Y: <span style="padding-left:1em" id="posY">0.00</span></p>
+                        <p style="color: lightblue">Position Z: <span style="padding-left:1em" id="posZ">0.00</span></p>
+                    </div>
+                    <hr>
+                    <div class="control">
+                        <p style="color: lightsalmon">Velocity: <span style="padding-left:1em" id="vel">0.00</span></p>
                     </div>
                 </div>
             </div>
