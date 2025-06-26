@@ -65,7 +65,7 @@ export class RayCast
                     const d2 = L.lengthSq() - tca * tca;
                     if (d2 > col.radius * col.radius) continue;
 
-                    // Check if distance is feasible
+                    // Check if distance is feasible (actual ray intersection - quadratic problem solving)
                     const thc = Math.sqrt(col.radius * col.radius - d2);
                     const t0 = tca - thc;
                     const tHit = (t0 >= 0 ? t0 : tca + thc);

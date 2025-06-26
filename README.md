@@ -1,7 +1,7 @@
 # Asteroids
 
 A 3D WebGL‐based arcade game for the 2024/2025 Interactive Graphics course at La Sapienza.  
-Written in plain JavaScript and raw WebGL—no frameworks.
+Written in plain JavaScript and raw WebGL, no frameworks.
 
 ---
 
@@ -24,7 +24,7 @@ Written in plain JavaScript and raw WebGL—no frameworks.
 
 ## Under-the-hood extras
 
-These are in the code already, just not yet in the main list:
+These are in the code already:
 
 - **Automatic bounding-box generation** for all meshes (used for culling/collision)  
 - **Device-pixel-ratio canvas resizing** for crisp output on high-DPI screens  
