@@ -15,13 +15,13 @@ export class Mercury extends Actor
 
     async InitMesh()
     {
-        await this.LoadObj("../assets/objects/mercury.obj"); // Handles collision component 
+        await this.LoadObj("./assets/objects/mercury.obj"); // Handles collision component 
 
         const VertShader = './src/shaders/mercury.vert';
         const FragShader = './src/shaders/mercury.frag';
         await this.InitShaders(VertShader, FragShader);
 
-        await this.LoadTexture("../assets/textures/mercury_diffuse.png", true);
+        await this.LoadTexture("./assets/textures/mercury_diffuse.png", true);
 
         this.mesh.setTransform(this.transform);
     }
