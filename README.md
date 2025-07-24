@@ -5,6 +5,10 @@ Written in plain JavaScript and raw WebGL, no frameworks.
 
 ---
 
+[Play it here!](https://erblurk.github.io/Asteroids/)
+
+---
+
 ## Features
 
 - **OBJ model loading** (with optional YZ axis swap)  
