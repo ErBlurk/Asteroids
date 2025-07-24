@@ -69,15 +69,15 @@ export class Pawn extends Actor
      */
     async InitMesh()
     {
-        await this.LoadObj("../assets/objects/spaceship.obj"); // Handles collision component 
+        await this.LoadObj("./assets/objects/spaceship.obj"); // Handles collision component 
 
         const VertShader = './src/shaders/spaceship.vert';
         const FragShader = './src/shaders/spaceship.frag';
         await this.InitShaders(VertShader, FragShader);
 
-        await this.LoadTexture("../assets/textures/spaceship_diffuse.png", true);
+        await this.LoadTexture("./assets/textures/spaceship_diffuse.png", true);
 
-        await this.LoadEmissiveTexture("../assets/textures/spaceship_emissive.png", true);
+        await this.LoadEmissiveTexture("./assets/textures/spaceship_emissive.png", true);
     }
 
     /*
